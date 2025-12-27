@@ -152,6 +152,13 @@
               density="compact"
               @update:model-value="updateConfig"
             ></v-checkbox>
+
+            <v-checkbox
+              v-model="config.showMetadata"
+              label="Show heterogeneity and test statistics"
+              density="compact"
+              @update:model-value="updateConfig"
+            ></v-checkbox>
           </v-card-text>
         </v-card>
       </v-col>
@@ -221,6 +228,10 @@
                   <td>{{ config.showValues ? 'Yes' : 'No' }}</td>
                 </tr>
                 <tr>
+                  <td>Show Metadata</td>
+                  <td>{{ config.showMetadata ? 'Yes' : 'No' }}</td>
+                </tr>
+                <tr>
                   <td>DPI</td>
                   <td>{{ config.dpi }}</td>
                 </tr>
@@ -234,7 +245,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, toRaw } from 'vue'
 import { useSessionStore } from '@/stores/session'
 import type { PlotConfig, AxisType } from '@/types'
 
@@ -255,6 +266,7 @@ const config = ref<PlotConfig>({
   colorScheme: 'default',
   showWeights: true,
   showValues: true,
+  showMetadata: false,
 })
 
 // Limits mode handling
@@ -337,7 +349,7 @@ async function updateConfig() {
 
   try {
     await sessionStore.updateSession(activeSession.value.id, {
-      config: { ...config.value }
+      config: toRaw({ ...config.value })
     })
   } catch (error) {
     console.error('Failed to update config:', error)

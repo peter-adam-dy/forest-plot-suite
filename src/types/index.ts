@@ -36,6 +36,7 @@ export interface PlotConfig {
   colorScheme: string
   showWeights: boolean
   showValues: boolean
+  showMetadata: boolean
 }
 
 export interface Session {
@@ -61,4 +62,5 @@ export const defaultPlotConfig: PlotConfig = {
   colorScheme: 'default',
   showWeights: true,
   showValues: true,
+  showMetadata: false,
 }
