@@ -185,8 +185,15 @@ const file = ref<File[] | null>(null)
 // Watch file changes
 watch(file, (newVal) => {
   console.log('File ref changed:', newVal)
-  if (newVal && newVal.length > 0) {
-    handleFileSelect()
+  if (newVal) {
+    // Check if it's an array or a single file
+    if (Array.isArray(newVal) && newVal.length > 0) {
+      handleFileSelect()
+    } else if (newVal instanceof File) {
+      // Single file selected - convert to array format
+      console.log('Single file detected, converting to array')
+      file.value = [newVal]
+    }
   }
 })
 const rawData = ref<any[]>([])
