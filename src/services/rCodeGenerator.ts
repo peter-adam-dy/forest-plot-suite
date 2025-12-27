@@ -103,26 +103,26 @@ m <- metagen(
   }
 
   // Build forest plot call
+  // Note: forest() uses grid graphics, so we use its parameters for titles
+  const mainTitle = subtitle ? `${title}\n${subtitle}` : title
+
   const forestCode = `
 # Generate forest plot
 forest(
   m,
   xlab = "${xlab}",
-  smlab = "${title}",
+  smlab = "${mainTitle}",
   leftcols = c("studlab"${config.showWeights ? ', "effect", "ci"' : ''}),
   leftlabs = c("Study"${config.showWeights ? ', "Effect", "95% CI"' : ''}),
-  rightcols = FALSE,
+  rightcols = c("effect", "ci"),
+  rightlabs = c("${config.effectMeasure}", "95% CI"),
   digits = 2,
   col.square = "${getColorScheme(config.colorScheme)}",
   col.diamond = "blue",
-  cex = ${config.pointSize / 3}${xlimCode}
+  cex = ${config.pointSize / 3},
+  test.overall = TRUE,
+  print.I2 = TRUE${xlimCode}
 )
-
-# Add title and subtitle
-${subtitle ? `title(main = "${title}", sub = "${subtitle}")` : `title(main = "${title}")`}
-
-# Add reference line at no effect
-${logScale ? 'abline(v = 0, lty = 2, col = "gray")' : getNoEffectLine(config.effectMeasure)}
 `
 
   return metaCode + forestCode
@@ -134,16 +134,6 @@ function getLogBase(axisType: string): number {
     case 'loge': return Math.E
     case 'log10': return 10
     default: return Math.E
-  }
-}
-
-function getNoEffectLine(effectMeasure: string): string {
-  // For ratio measures (RR, OR, HR), no effect is at 1
-  // For difference measures (MD, SMD), no effect is at 0
-  if (['RR', 'OR', 'HR'].includes(effectMeasure)) {
-    return 'abline(v = 1, lty = 2, col = "gray")'
-  } else {
-    return 'abline(v = 0, lty = 2, col = "gray")'
   }
 }
 
