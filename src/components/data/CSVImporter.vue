@@ -215,13 +215,34 @@ async function handleFileSelect() {
 
 function parseCSVRaw(csvText: string) {
   const lines = csvText.split('\n').filter(line => line.trim())
-  if (lines.length === 0) return
+  if (lines.length === 0) {
+    console.log('CSV is empty')
+    return
+  }
 
-  const headerLine = lines[0]
-  if (!headerLine) return
+  console.log('Parsing CSV with', lines.length, 'lines')
 
-  const headers = headerLine.split(',').map(h => h.trim())
-  const dataStartIndex = hasHeader.value ? 1 : 0
+  // Determine headers and data start
+  let headers: string[]
+  let dataStartIndex: number
+
+  if (hasHeader.value) {
+    // First line is header
+    const headerLine = lines[0]
+    if (!headerLine) return
+    headers = headerLine.split(',').map(h => h.trim())
+    dataStartIndex = 1
+  } else {
+    // No header - generate column names based on first row
+    const firstLine = lines[0]
+    if (!firstLine) return
+    const firstValues = firstLine.split(',')
+    headers = firstValues.map((_, idx) => `Column ${idx + 1}`)
+    dataStartIndex = 0
+  }
+
+  console.log('Headers:', headers)
+  console.log('Data starts at line:', dataStartIndex)
 
   // Parse raw data
   rawData.value = []
@@ -232,19 +253,20 @@ function parseCSVRaw(csvText: string) {
 
     const row: any = {}
     headers.forEach((header, idx) => {
-      const columnName = hasHeader.value ? header : `Column ${idx + 1}`
-      row[columnName] = values[idx] || ''
+      row[header] = values[idx] || ''
     })
     rawData.value.push(row)
   }
 
+  console.log('Parsed', rawData.value.length, 'rows')
+
   // Setup available columns
-  const firstRow = rawData.value[0]
-  if (firstRow) {
-    availableColumns.value = Object.keys(firstRow).map(key => ({
+  if (rawData.value.length > 0 && rawData.value[0]) {
+    availableColumns.value = Object.keys(rawData.value[0]).map(key => ({
       title: key,
       value: key
     }))
+    console.log('Available columns:', availableColumns.value)
   }
 
   // Auto-detect columns
