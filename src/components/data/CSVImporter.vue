@@ -13,6 +13,27 @@
           variant="outlined"
         ></v-file-input>
 
+        <v-row v-if="file" class="mt-2">
+          <v-col cols="6">
+            <v-select
+              v-model="delimiter"
+              :items="delimiterOptions"
+              label="Delimiter"
+              variant="outlined"
+              density="compact"
+              @update:model-value="handleDelimiterChange"
+            ></v-select>
+          </v-col>
+          <v-col cols="6">
+            <v-checkbox
+              v-model="hasHeader"
+              label="First row contains headers"
+              density="compact"
+              @update:model-value="handleFileReparse"
+            ></v-checkbox>
+          </v-col>
+        </v-row>
+
         <!-- Step 2: Column Mapping -->
         <div v-if="rawData.length > 0" class="mt-4">
           <v-divider class="mb-4"></v-divider>
@@ -73,13 +94,6 @@
               ></v-select>
             </v-col>
           </v-row>
-
-          <v-checkbox
-            v-model="hasHeader"
-            label="First row contains column headers"
-            density="compact"
-            @update:model-value="handleFileReparse"
-          ></v-checkbox>
         </div>
 
         <!-- Validation Errors/Warnings -->
@@ -181,6 +195,14 @@ const emit = defineEmits<{
 }>()
 
 const file = ref<File[] | null>(null)
+const delimiter = ref<string>(',')
+const delimiterOptions = [
+  { title: 'Comma (,)', value: ',' },
+  { title: 'Semicolon (;)', value: ';' },
+  { title: 'Tab (\\t)', value: '\t' },
+  { title: 'Pipe (|)', value: '|' },
+  { title: 'Space ( )', value: ' ' },
+]
 
 // Watch file changes
 watch(file, (newVal) => {
@@ -245,7 +267,7 @@ function parseCSVRaw(csvText: string) {
     return
   }
 
-  console.log('Parsing CSV with', lines.length, 'lines')
+  console.log('Parsing CSV with', lines.length, 'lines, delimiter:', delimiter.value)
 
   // Determine headers and data start
   let headers: string[]
@@ -255,13 +277,13 @@ function parseCSVRaw(csvText: string) {
     // First line is header
     const headerLine = lines[0]
     if (!headerLine) return
-    headers = headerLine.split(',').map(h => h.trim())
+    headers = headerLine.split(delimiter.value).map(h => h.trim())
     dataStartIndex = 1
   } else {
     // No header - generate column names based on first row
     const firstLine = lines[0]
     if (!firstLine) return
-    const firstValues = firstLine.split(',')
+    const firstValues = firstLine.split(delimiter.value)
     headers = firstValues.map((_, idx) => `Column ${idx + 1}`)
     dataStartIndex = 0
   }
@@ -274,7 +296,7 @@ function parseCSVRaw(csvText: string) {
   for (let i = dataStartIndex; i < lines.length; i++) {
     const line = lines[i]
     if (!line) continue
-    const values = line.split(',').map(v => v.trim())
+    const values = line.split(delimiter.value).map(v => v.trim())
 
     const row: any = {}
     headers.forEach((header, idx) => {
@@ -354,6 +376,11 @@ function handleFileReparse() {
   }
 }
 
+function handleDelimiterChange() {
+  // Re-parse the file with the new delimiter
+  handleFileReparse()
+}
+
 function updatePreview() {
   if (!columnMapping.value.study || !columnMapping.value.effect ||
       !columnMapping.value.ci_lower || !columnMapping.value.ci_upper) {
@@ -427,6 +454,7 @@ function close() {
 
 function reset() {
   file.value = null
+  delimiter.value = ','
   rawData.value = []
   availableColumns.value = []
   columnMapping.value = {
