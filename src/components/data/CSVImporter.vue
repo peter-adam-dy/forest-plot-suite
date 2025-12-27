@@ -11,7 +11,6 @@
           accept=".csv"
           prepend-icon="mdi-file-delimited"
           variant="outlined"
-          @update:model-value="handleFileSelect"
         ></v-file-input>
 
         <!-- Step 2: Column Mapping -->
@@ -169,7 +168,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import type { ParsedData, ForestPlotData } from '@/types'
 
 defineProps<{
@@ -182,6 +181,14 @@ const emit = defineEmits<{
 }>()
 
 const file = ref<File[] | null>(null)
+
+// Watch file changes
+watch(file, (newVal) => {
+  console.log('File ref changed:', newVal)
+  if (newVal && newVal.length > 0) {
+    handleFileSelect()
+  }
+})
 const rawData = ref<any[]>([])
 const hasHeader = ref(true)
 const availableColumns = ref<{ title: string; value: string }[]>([])
@@ -195,18 +202,29 @@ const columnMapping = ref({
 const parseResult = ref<ParsedData | null>(null)
 
 async function handleFileSelect() {
+  console.log('handleFileSelect called', file.value)
+
   if (!file.value || file.value.length === 0) {
+    console.log('No file selected or empty array')
     reset()
     return
   }
 
+  console.log('File array length:', file.value.length)
+
   try {
     const selectedFile = file.value[0]
+    console.log('Selected file:', selectedFile)
+
     if (!selectedFile) {
+      console.log('First file is undefined')
       reset()
       return
     }
+
+    console.log('Reading file text...')
     const text = await selectedFile.text()
+    console.log('File text length:', text.length)
     parseCSVRaw(text)
   } catch (error) {
     console.error('Failed to read CSV file:', error)
