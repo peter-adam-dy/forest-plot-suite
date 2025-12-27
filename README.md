@@ -21,12 +21,34 @@ A modern web-based forest plot generator built with Vue 3, TypeScript, and Vueti
 - ✅ **Data Validation**: Real-time validation with error and warning display
 - ✅ **Column Mapping**: Intelligent column detection with manual override for flexible data import
 
-### Coming Soon (Phase 3+)
-- 🔄 Plot Configuration: Customize axis types, labels, colors, and more
-- 🔄 WebR Integration: Generate forest plots using R in the browser
-- 🔄 Plot Viewer: Interactive plot display with zoom/pan
-- 🔄 Code Editor: View and edit generated R code
-- 🔄 Export: PNG, SVG, and R code exports
+**Phase 3: Plot Configuration & WebR Integration**
+- ✅ **Plot Configuration**: Comprehensive configuration panel with all plot settings
+  - Axis type selection (linear, log2, loge, log10)
+  - Auto and manual axis limits
+  - Title, subtitle, and axis labels
+  - Effect measure selection (RR, OR, HR, MD, SMD)
+  - Visual styling (point size, color schemes, show weights)
+  - DPI selection for export quality (72, 150, 300, 600)
+- ✅ **WebR Integration**: Full R environment running in the browser
+  - Automatic WebR initialization with package installation
+  - R code generation from data and configuration
+  - Real-time plot generation without server backend
+- ✅ **Plot Viewer**: Interactive plot display component
+  - Live plot generation with loading states
+  - Download plots as PNG
+  - Copy plots to clipboard
+  - Plot statistics and data summary
+- ✅ **Code Viewer**: View and export generated R code
+  - Syntax-highlighted R code display
+  - Copy code to clipboard
+  - Download as .R file
+  - Code information and usage instructions
+
+### Coming Soon (Phase 4+)
+- 🔄 Advanced Export: SVG and PDF exports
+- 🔄 Custom R Code: Edit and run custom R code
+- 🔄 Additional Plot Types: Funnel plots, forest plots with subgroups
+- 🔄 Data Versioning UI: Manage multiple data versions
 
 ## Tech Stack
 
@@ -45,15 +67,24 @@ A modern web-based forest plot generator built with Vue 3, TypeScript, and Vueti
 src/
 ├── components/          # Vue components
 │   ├── session/        # Session management components
-│   ├── data/           # Data input/editing components (coming soon)
-│   ├── plot/           # Plot viewer components (coming soon)
-│   ├── code/           # Code editor components (coming soon)
+│   │   └── SessionManager.vue
+│   ├── data/           # Data input/editing components
+│   │   ├── DataEditor.vue
+│   │   ├── CSVImporter.vue
+│   │   └── ExcelImporter.vue
+│   ├── plot/           # Plot viewer and configuration components
+│   │   ├── PlotConfig.vue
+│   │   ├── PlotViewer.vue
+│   │   └── CodeViewer.vue
 │   └── shared/         # Shared/common components
 ├── stores/             # Pinia stores
 │   └── session.ts      # Session state management
 ├── db/                 # IndexedDB utilities
 │   └── schema.ts       # Database schema and operations
 ├── services/           # Business logic services
+│   ├── dataParser.ts   # CSV/Excel parsing
+│   ├── webr.ts         # WebR service
+│   └── rCodeGenerator.ts # R code generation
 ├── types/              # TypeScript type definitions
 │   └── index.ts        # Core types and interfaces
 ├── App.vue             # Root component
@@ -148,8 +179,8 @@ This project follows a phased development approach:
 
 1. ✅ Phase 1: Project scaffolding and session management
 2. ✅ Phase 2: Data input and management
-3. 🔄 Phase 3: WebR integration and plot generation
-4. 🔄 Phase 4: Plot configuration and advanced export
+3. ✅ Phase 3: WebR integration and plot generation
+4. 🔄 Phase 4: Advanced features and export options
 
 ## License
 

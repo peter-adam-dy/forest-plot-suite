@@ -59,21 +59,11 @@
             </v-window-item>
 
             <v-window-item value="plot">
-              <v-card>
-                <v-card-text>
-                  <p class="text-h6">Plot Viewer (Coming Soon)</p>
-                  <p class="text-body-2">Generated forest plot will be displayed here.</p>
-                </v-card-text>
-              </v-card>
+              <PlotViewer />
             </v-window-item>
 
             <v-window-item value="code">
-              <v-card>
-                <v-card-text>
-                  <p class="text-h6">R Code Editor (Coming Soon)</p>
-                  <p class="text-body-2">Generated R code will be shown here with syntax highlighting.</p>
-                </v-card-text>
-              </v-card>
+              <CodeViewer />
             </v-window-item>
           </v-window>
         </div>
@@ -88,6 +78,8 @@ import { useSessionStore } from '@/stores/session'
 import SessionManager from '@/components/session/SessionManager.vue'
 import DataEditor from '@/components/data/DataEditor.vue'
 import PlotConfig from '@/components/plot/PlotConfig.vue'
+import PlotViewer from '@/components/plot/PlotViewer.vue'
+import CodeViewer from '@/components/plot/CodeViewer.vue'
 
 const drawer = ref(true)
 const currentTab = ref('data')
