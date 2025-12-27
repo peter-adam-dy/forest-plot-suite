@@ -39,7 +39,7 @@ class WebRServiceImpl implements WebRService {
 
       // Install required packages
       console.log('Installing R packages...')
-      await this.installPackages(['meta', 'metafor', 'grid'])
+      await this.installPackages(['meta', 'metafor', 'grid', 'jsonlite'])
       console.log('R packages installed successfully')
 
       this.ready = true
@@ -76,29 +76,34 @@ class WebRServiceImpl implements WebRService {
     }
 
     try {
-      // Use WebR's canvas device
-      await this.webR.evalR('webr::canvas(width=800, height=600)')
+      // Use PNG device with WebR's virtual filesystem
+      const plotCode = `
+        # Create a connection to capture PNG output
+        png_file <- file("/tmp/plot.png", "wb")
+        png(png_file, width=800, height=600, res=150)
 
-      // Execute the plot code
-      await this.webR.evalR(code)
+        # Execute the plot code
+        ${code}
 
-      // Flush the canvas and get the image
-      const result = await this.webR.evalR('webr::canvas_capture()')
+        # Close the device
+        dev.off()
+        close(png_file)
+
+        # Read the file and encode as base64
+        con <- file("/tmp/plot.png", "rb")
+        img_raw <- readBin(con, "raw", n = 1e6)
+        close(con)
+
+        # Convert to base64
+        paste0(as.character(jsonlite::base64_enc(img_raw)))
+      `
+
+      const result = await this.webR.evalR(plotCode)
       const imageData: unknown = await result.toJs()
 
-      // Close the device
-      await this.webR.evalR('dev.off()')
-
-      // imageData should be a base64-encoded PNG
+      // imageData should be a base64-encoded PNG string
       if (typeof imageData === 'string' && imageData.length > 0) {
         return `data:image/png;base64,${imageData}`
-      }
-
-      // If it's an array, convert it
-      if (Array.isArray(imageData)) {
-        const uint8Array = new Uint8Array(imageData as number[])
-        const base64 = this.arrayBufferToBase64(uint8Array)
-        return `data:image/png;base64,${base64}`
       }
 
       console.error('Unexpected image data type:', typeof imageData, imageData)
@@ -107,9 +112,9 @@ class WebRServiceImpl implements WebRService {
       console.error('Failed to generate plot:', error)
       // Try to close any open devices
       try {
-        await this.webR.evalR('dev.off()')
+        await this.webR.evalR('graphics.off()')
       } catch (e) {
-        // Ignore errors when closing device
+        // Ignore errors when closing devices
       }
       throw error
     }
@@ -132,15 +137,6 @@ class WebRServiceImpl implements WebRService {
       console.error('Failed to install packages:', error)
       throw error
     }
-  }
-
-  private arrayBufferToBase64(buffer: Uint8Array): string {
-    let binary = ''
-    const len = buffer.byteLength
-    for (let i = 0; i < len; i++) {
-      binary += String.fromCharCode(buffer[i] as number)
-    }
-    return btoa(binary)
   }
 }
 
