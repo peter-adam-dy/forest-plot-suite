@@ -16,10 +16,10 @@ A modern web-based forest plot generator built with Vue 3, TypeScript, and Vueti
 
 **Phase 2: Data Input & Management**
 - ✅ **Data Editor**: Editable Vuetify data table with inline editing
-- ✅ **CSV Import**: Upload and parse CSV files with validation
-- ✅ **Excel Import**: Advanced Excel import with sheet/range selection
+- ✅ **CSV Import**: Upload and parse CSV/TSV files with configurable delimiters (comma, semicolon, tab, pipe, space)
+- ✅ **Excel Import**: Advanced Excel/CSV import with sheet/range selection, orientation support, and delimiter selection
 - ✅ **Data Validation**: Real-time validation with error and warning display
-- ✅ **Column Mapping**: Intelligent column detection for various naming conventions
+- ✅ **Column Mapping**: Intelligent column detection with manual override for flexible data import
 
 ### Coming Soon (Phase 3+)
 - 🔄 Plot Configuration: Customize axis types, labels, colors, and more

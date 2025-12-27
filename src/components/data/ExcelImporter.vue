@@ -7,15 +7,37 @@
         <!-- Step 1: File Upload -->
         <v-file-input
           v-model="file"
-          label="Select Excel file"
-          accept=".xlsx,.xls"
+          label="Select Excel or CSV file"
+          accept=".xlsx,.xls,.csv,.tsv"
           prepend-icon="mdi-file-excel"
           variant="outlined"
           @update:model-value="handleFileSelect"
         ></v-file-input>
 
-        <!-- Step 2: Sheet and Options -->
-        <div v-if="sheets.length > 0" class="mt-4">
+        <!-- CSV Delimiter Selector -->
+        <v-row v-if="isCSVFile && file" class="mt-2">
+          <v-col cols="6">
+            <v-select
+              v-model="delimiter"
+              :items="delimiterOptions"
+              label="Delimiter"
+              variant="outlined"
+              density="compact"
+              @update:model-value="handleFileSelect"
+            ></v-select>
+          </v-col>
+          <v-col cols="6">
+            <v-checkbox
+              v-model="hasHeader"
+              label="First row/column has headers"
+              density="compact"
+              @update:model-value="handleFileSelect"
+            ></v-checkbox>
+          </v-col>
+        </v-row>
+
+        <!-- Step 2: Sheet and Options (Excel only) -->
+        <div v-if="sheets.length > 0 && !isCSVFile" class="mt-4">
           <v-divider class="mb-4"></v-divider>
           <div class="text-h6 mb-3">Import Options</div>
 
@@ -228,7 +250,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { getExcelSheets } from '@/services/dataParser'
 import type { ParsedData, ForestPlotData } from '@/types'
 import * as XLSX from 'xlsx'
@@ -250,6 +272,14 @@ const orientation = ref<'rows' | 'columns'>('rows')
 const hasHeader = ref(true)
 const startRow = ref<number>(1)
 const endRow = ref<number | string | undefined>(undefined)
+const delimiter = ref<string>(',')
+const delimiterOptions = [
+  { title: 'Comma (,)', value: ',' },
+  { title: 'Semicolon (;)', value: ';' },
+  { title: 'Tab (\\t)', value: '\t' },
+  { title: 'Pipe (|)', value: '|' },
+  { title: 'Space ( )', value: ' ' },
+]
 const rawData = ref<any[]>([])
 const availableColumns = ref<{ title: string; value: string }[]>([])
 const columnMapping = ref({
@@ -260,6 +290,12 @@ const columnMapping = ref({
   weight: null as string | null,
 })
 const parseResult = ref<ParsedData | null>(null)
+
+const isCSVFile = computed(() => {
+  if (!file.value || file.value.length === 0) return false
+  const fileName = file.value[0]?.name || ''
+  return fileName.toLowerCase().endsWith('.csv') || fileName.toLowerCase().endsWith('.tsv')
+})
 
 async function handleFileSelect() {
   if (!file.value || file.value.length === 0) {
@@ -274,18 +310,77 @@ async function handleFileSelect() {
       return
     }
 
-    fileBuffer.value = await selectedFile.arrayBuffer()
-    sheets.value = getExcelSheets(fileBuffer.value)
+    if (isCSVFile.value) {
+      // Handle CSV/TSV files
+      const text = await selectedFile.text()
+      parseCSVFile(text)
+    } else {
+      // Handle Excel files
+      fileBuffer.value = await selectedFile.arrayBuffer()
+      sheets.value = getExcelSheets(fileBuffer.value)
 
-    if (sheets.value.length > 0) {
-      selectedSheet.value = sheets.value[0] || ''
-      if (selectedSheet.value) {
-        parseSheet()
+      if (sheets.value.length > 0) {
+        selectedSheet.value = sheets.value[0] || ''
+        if (selectedSheet.value) {
+          parseSheet()
+        }
       }
     }
   } catch (error) {
-    console.error('Failed to read Excel file:', error)
+    console.error('Failed to read file:', error)
   }
+}
+
+function parseCSVFile(csvText: string) {
+  const lines = csvText.split('\n').filter(line => line.trim())
+  if (lines.length === 0) {
+    console.log('CSV is empty')
+    return
+  }
+
+  // Determine headers and data start
+  let headers: string[]
+  let dataStartIndex: number
+
+  if (hasHeader.value) {
+    // First line is header
+    const headerLine = lines[0]
+    if (!headerLine) return
+    headers = headerLine.split(delimiter.value).map(h => h.trim())
+    dataStartIndex = 1
+  } else {
+    // No header - generate column names based on first row
+    const firstLine = lines[0]
+    if (!firstLine) return
+    const firstValues = firstLine.split(delimiter.value)
+    headers = firstValues.map((_, idx) => `Column ${idx + 1}`)
+    dataStartIndex = 0
+  }
+
+  // Parse raw data
+  rawData.value = []
+  for (let i = dataStartIndex; i < lines.length; i++) {
+    const line = lines[i]
+    if (!line) continue
+    const values = line.split(delimiter.value).map(v => v.trim())
+
+    const row: any = {}
+    headers.forEach((header, idx) => {
+      row[header] = values[idx] || ''
+    })
+    rawData.value.push(row)
+  }
+
+  // Setup available columns
+  if (rawData.value.length > 0 && rawData.value[0]) {
+    availableColumns.value = Object.keys(rawData.value[0]).map(key => ({
+      title: key,
+      value: key
+    }))
+  }
+
+  // Auto-detect columns
+  autoMapColumns()
 }
 
 function parseSheet() {
@@ -508,6 +603,7 @@ function reset() {
   hasHeader.value = true
   startRow.value = 1
   endRow.value = undefined
+  delimiter.value = ','
   rawData.value = []
   availableColumns.value = []
   columnMapping.value = {
