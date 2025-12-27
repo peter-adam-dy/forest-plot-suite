@@ -76,34 +76,41 @@ class WebRServiceImpl implements WebRService {
     }
 
     try {
-      // Create a temporary PNG device
-      const plotCode = `
-        # Create PNG device
-        png(filename = "/tmp/plot.png", width = 800, height = 600, res = 150)
+      // Use WebR's canvas device
+      await this.webR.evalR('webr::canvas(width=800, height=600)')
 
-        # User's plot code
-        ${code}
+      // Execute the plot code
+      await this.webR.evalR(code)
 
-        # Close device
-        dev.off()
+      // Flush the canvas and get the image
+      const result = await this.webR.evalR('webr::canvas_capture()')
+      const imageData: unknown = await result.toJs()
 
-        # Read the PNG file
-        readBin("/tmp/plot.png", "raw", n = file.info("/tmp/plot.png")$size)
-      `
+      // Close the device
+      await this.webR.evalR('dev.off()')
 
-      const result = await this.webR.evalR(plotCode)
-      const imageData = await result.toJs()
+      // imageData should be a base64-encoded PNG
+      if (typeof imageData === 'string' && imageData.length > 0) {
+        return `data:image/png;base64,${imageData}`
+      }
 
-      // Convert raw bytes to base64
+      // If it's an array, convert it
       if (Array.isArray(imageData)) {
         const uint8Array = new Uint8Array(imageData as number[])
         const base64 = this.arrayBufferToBase64(uint8Array)
         return `data:image/png;base64,${base64}`
       }
 
+      console.error('Unexpected image data type:', typeof imageData, imageData)
       throw new Error('Invalid image data format')
     } catch (error) {
       console.error('Failed to generate plot:', error)
+      // Try to close any open devices
+      try {
+        await this.webR.evalR('dev.off()')
+      } catch (e) {
+        // Ignore errors when closing device
+      }
       throw error
     }
   }
