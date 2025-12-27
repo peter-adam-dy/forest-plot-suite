@@ -349,7 +349,7 @@ async function updateConfig() {
 
   try {
     await sessionStore.updateSession(activeSession.value.id, {
-      config: toRaw({ ...config.value })
+      config: toRaw(config.value)
     })
   } catch (error) {
     console.error('Failed to update config:', error)
