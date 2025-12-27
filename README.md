@@ -4,7 +4,9 @@ A modern web-based forest plot generator built with Vue 3, TypeScript, and Vueti
 
 ## Features
 
-### Current Implementation (Phase 1)
+### Current Implementation
+
+**Phase 1: Project Scaffolding & Session Management**
 - ✅ **Project Scaffolding**: Vue 3 + TypeScript + Vite setup
 - ✅ **Session Management**: Create, rename, delete, and manage multiple analysis sessions
 - ✅ **IndexedDB Persistence**: All sessions automatically saved to browser storage
@@ -12,10 +14,14 @@ A modern web-based forest plot generator built with Vue 3, TypeScript, and Vueti
 - ✅ **Modern UI**: Vuetify 3 Material Design interface with responsive navigation
 - ✅ **Type Safety**: Full TypeScript implementation with strict type checking
 
-### Coming Soon (Phase 2+)
-- 🔄 Data Editor: Manual data entry with editable grid
-- 🔄 CSV Import: Upload and parse CSV files
-- 🔄 Excel Import: Advanced Excel import with sheet/range selection
+**Phase 2: Data Input & Management**
+- ✅ **Data Editor**: Editable Vuetify data table with inline editing
+- ✅ **CSV Import**: Upload and parse CSV files with validation
+- ✅ **Excel Import**: Advanced Excel import with sheet/range selection
+- ✅ **Data Validation**: Real-time validation with error and warning display
+- ✅ **Column Mapping**: Intelligent column detection for various naming conventions
+
+### Coming Soon (Phase 3+)
 - 🔄 Plot Configuration: Customize axis types, labels, colors, and more
 - 🔄 WebR Integration: Generate forest plots using R in the browser
 - 🔄 Plot Viewer: Interactive plot display with zoom/pan
@@ -141,9 +147,9 @@ interface ForestPlotData {
 This project follows a phased development approach:
 
 1. ✅ Phase 1: Project scaffolding and session management
-2. 🔄 Phase 2: Data input and management
+2. ✅ Phase 2: Data input and management
 3. 🔄 Phase 3: WebR integration and plot generation
-4. 🔄 Phase 4: Export and advanced features
+4. 🔄 Phase 4: Plot configuration and advanced export
 
 ## License
 
