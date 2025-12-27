@@ -55,12 +55,7 @@
             </v-window-item>
 
             <v-window-item value="config">
-              <v-card>
-                <v-card-text>
-                  <p class="text-h6">Plot Configuration (Coming Soon)</p>
-                  <p class="text-body-2">Plot settings and options will be available here.</p>
-                </v-card-text>
-              </v-card>
+              <PlotConfig />
             </v-window-item>
 
             <v-window-item value="plot">
@@ -92,6 +87,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useSessionStore } from '@/stores/session'
 import SessionManager from '@/components/session/SessionManager.vue'
 import DataEditor from '@/components/data/DataEditor.vue'
+import PlotConfig from '@/components/plot/PlotConfig.vue'
 
 const drawer = ref(true)
 const currentTab = ref('data')
