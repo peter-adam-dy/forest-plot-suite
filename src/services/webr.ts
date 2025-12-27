@@ -99,7 +99,15 @@ class WebRServiceImpl implements WebRService {
       const result = await this.webR.evalR(plotCode)
       const imageData: unknown = await result.toJs()
 
-      // imageData should be a base64-encoded PNG string
+      // imageData is an R object with values array
+      if (imageData && typeof imageData === 'object' && 'values' in imageData) {
+        const values = (imageData as any).values
+        if (Array.isArray(values) && values.length > 0 && typeof values[0] === 'string') {
+          return `data:image/png;base64,${values[0]}`
+        }
+      }
+
+      // Fallback: if it's a plain string
       if (typeof imageData === 'string' && imageData.length > 0) {
         return `data:image/png;base64,${imageData}`
       }
