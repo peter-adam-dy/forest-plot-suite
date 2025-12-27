@@ -122,6 +122,9 @@ m <- metagen(
     rightLabs = ''
   }
 
+  // Determine reference line value based on effect measure
+  const refValue = getNoEffectValue(config.effectMeasure)
+
   const forestCode = `
 # Generate forest plot
 forest(
@@ -140,7 +143,8 @@ forest(
   spacing = 1.5,
   just.studlab = "left",
   just.addcols = "center",
-  fontsize = 10${xlimCode}
+  fontsize = 10,
+  ref = ${refValue}${xlimCode}
 )
 `
 
@@ -153,6 +157,16 @@ function getLogBase(axisType: string): number {
     case 'loge': return Math.E
     case 'log10': return 10
     default: return Math.E
+  }
+}
+
+function getNoEffectValue(effectMeasure: string): number {
+  // For ratio measures (RR, OR, HR), no effect is at 1
+  // For difference measures (MD, SMD), no effect is at 0
+  if (['RR', 'OR', 'HR'].includes(effectMeasure)) {
+    return 1
+  } else {
+    return 0
   }
 }
 
