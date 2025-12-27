@@ -245,7 +245,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, toRaw } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useSessionStore } from '@/stores/session'
 import type { PlotConfig, AxisType } from '@/types'
 
@@ -349,7 +349,7 @@ async function updateConfig() {
 
   try {
     await sessionStore.updateSession(activeSession.value.id, {
-      config: toRaw(config.value)
+      config: config.value
     })
   } catch (error) {
     console.error('Failed to update config:', error)
