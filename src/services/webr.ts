@@ -78,16 +78,14 @@ class WebRServiceImpl implements WebRService {
     try {
       // Use PNG device with WebR's virtual filesystem
       const plotCode = `
-        # Create a connection to capture PNG output
-        png_file <- file("/tmp/plot.png", "wb")
-        png(png_file, width=800, height=600, res=150)
+        # Create PNG device with filename directly
+        png("/tmp/plot.png", width=800, height=600, res=150)
 
         # Execute the plot code
         ${code}
 
         # Close the device
         dev.off()
-        close(png_file)
 
         # Read the file and encode as base64
         con <- file("/tmp/plot.png", "rb")
