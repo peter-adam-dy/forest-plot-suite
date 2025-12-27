@@ -11,7 +11,6 @@
           accept=".xlsx,.xls,.csv,.tsv"
           prepend-icon="mdi-file-excel"
           variant="outlined"
-          @update:model-value="handleFileSelect"
         ></v-file-input>
 
         <!-- CSV Delimiter Selector -->
@@ -23,7 +22,7 @@
               label="Delimiter"
               variant="outlined"
               density="compact"
-              @update:model-value="handleFileSelect"
+              @update:model-value="reparseFile"
             ></v-select>
           </v-col>
           <v-col cols="6">
@@ -31,7 +30,7 @@
               v-model="hasHeader"
               label="First row/column has headers"
               density="compact"
-              @update:model-value="handleFileSelect"
+              @update:model-value="reparseFile"
             ></v-checkbox>
           </v-col>
         </v-row>
@@ -250,7 +249,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { getExcelSheets } from '@/services/dataParser'
 import type { ParsedData, ForestPlotData } from '@/types'
 import * as XLSX from 'xlsx'
@@ -297,6 +296,20 @@ const isCSVFile = computed(() => {
   return fileName.toLowerCase().endsWith('.csv') || fileName.toLowerCase().endsWith('.tsv')
 })
 
+// Watch for file changes and convert single File to array if needed
+watch(file, (newVal) => {
+  console.log('File ref changed:', newVal)
+  if (newVal) {
+    if (Array.isArray(newVal) && newVal.length > 0) {
+      console.log('File is array with length:', newVal.length)
+      handleFileSelect()
+    } else if (newVal instanceof File) {
+      console.log('File is single File object, converting to array')
+      file.value = [newVal]
+    }
+  }
+})
+
 async function handleFileSelect() {
   if (!file.value || file.value.length === 0) {
     reset()
@@ -328,6 +341,26 @@ async function handleFileSelect() {
     }
   } catch (error) {
     console.error('Failed to read file:', error)
+  }
+}
+
+async function reparseFile() {
+  if (!file.value || file.value.length === 0) return
+
+  const selectedFile = file.value[0]
+  if (!selectedFile) return
+
+  try {
+    if (isCSVFile.value) {
+      // Re-parse CSV with new delimiter or header setting
+      const text = await selectedFile.text()
+      parseCSVFile(text)
+    } else {
+      // For Excel files, re-parse the sheet
+      parseSheet()
+    }
+  } catch (error) {
+    console.error('Failed to reparse file:', error)
   }
 }
 
