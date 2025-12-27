@@ -79,7 +79,7 @@ class WebRServiceImpl implements WebRService {
       // Use PNG device with WebR's virtual filesystem
       const plotCode = `
         # Create PNG device with filename directly
-        png("/tmp/plot.png", width=800, height=600, res=150)
+        png("/tmp/plot.png", width=1200, height=800, res=120)
 
         # Execute the plot code
         ${code}

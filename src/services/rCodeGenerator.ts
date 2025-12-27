@@ -134,7 +134,10 @@ forest(
   col.diamond = "blue",
   cex = ${config.pointSize / 3},
   test.overall = TRUE,
-  print.I2 = TRUE${xlimCode}
+  print.I2 = TRUE,
+  spacing = 1.2,
+  just.studlab = "left",
+  just.addcols = "center"${xlimCode}
 )
 `
 
