@@ -6,6 +6,12 @@ export interface ForestPlotData {
   weight?: number
 }
 
+export interface ParsedData {
+  data: ForestPlotData[]
+  errors: string[]
+  warnings: string[]
+}
+
 export interface DataVersion {
   id: string
   name: string

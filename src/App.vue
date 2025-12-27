@@ -51,12 +51,7 @@
 
           <v-window v-model="currentTab">
             <v-window-item value="data">
-              <v-card>
-                <v-card-text>
-                  <p class="text-h6">Data Editor (Coming Soon)</p>
-                  <p class="text-body-2">Manual data entry and import functionality will be implemented here.</p>
-                </v-card-text>
-              </v-card>
+              <DataEditor />
             </v-window-item>
 
             <v-window-item value="config">
@@ -96,6 +91,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useSessionStore } from '@/stores/session'
 import SessionManager from '@/components/session/SessionManager.vue'
+import DataEditor from '@/components/data/DataEditor.vue'
 
 const drawer = ref(true)
 const currentTab = ref('data')
