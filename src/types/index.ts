@@ -35,6 +35,7 @@ export interface PlotConfig {
   pointSize: number
   colorScheme: string
   showWeights: boolean
+  showValues: boolean
 }
 
 export interface Session {
@@ -59,4 +60,5 @@ export const defaultPlotConfig: PlotConfig = {
   pointSize: 3,
   colorScheme: 'default',
   showWeights: true,
+  showValues: true,
 }

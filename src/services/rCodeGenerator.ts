@@ -106,16 +106,18 @@ m <- metagen(
   // Note: forest() uses grid graphics, so we use its parameters for titles
   const mainTitle = subtitle ? `${title}\n${subtitle}` : title
 
-  // Configure columns based on showWeights setting
+  // Configure columns based on showValues setting
   let leftCols = 'c("studlab")'
   let leftLabs = 'c("Study")'
-  let rightCols = 'c("effect", "ci")'
-  let rightLabs = `c("${config.effectMeasure}", "95% CI")`
+  let rightCols: string
+  let rightLabs: string
 
-  if (config.showWeights) {
-    // Show effect and CI on the left when weights are shown
-    leftCols = 'c("studlab", "effect", "ci")'
-    leftLabs = 'c("Study", "Effect", "95% CI")'
+  if (config.showValues) {
+    // Show effect and CI on the right
+    rightCols = 'c("effect", "ci")'
+    rightLabs = `c("${config.effectMeasure}", "95% CI")`
+  } else {
+    // Don't show values
     rightCols = 'FALSE'
     rightLabs = ''
   }
@@ -135,9 +137,10 @@ forest(
   cex = ${config.pointSize / 3},
   test.overall = TRUE,
   print.I2 = TRUE,
-  spacing = 1.2,
+  spacing = 1.5,
   just.studlab = "left",
-  just.addcols = "center"${xlimCode}
+  just.addcols = "center",
+  fontsize = 10${xlimCode}
 )
 `
 

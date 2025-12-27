@@ -272,7 +272,7 @@ async function generatePlot() {
 
     // Execute R code and generate plot
     const webR = getWebRService()
-    const imageDataUrl = await webR.generatePlot(rCode)
+    const imageDataUrl = await webR.generatePlot(rCode, activeSession.value.config.dpi)
 
     plotImage.value = imageDataUrl
     generatedTime.value = new Date().toLocaleString()

@@ -145,6 +145,13 @@
               density="compact"
               @update:model-value="updateConfig"
             ></v-checkbox>
+
+            <v-checkbox
+              v-model="config.showValues"
+              label="Show effect values and CIs"
+              density="compact"
+              @update:model-value="updateConfig"
+            ></v-checkbox>
           </v-card-text>
         </v-card>
       </v-col>
@@ -210,6 +217,10 @@
                   <td>{{ config.showWeights ? 'Yes' : 'No' }}</td>
                 </tr>
                 <tr>
+                  <td>Show Values</td>
+                  <td>{{ config.showValues ? 'Yes' : 'No' }}</td>
+                </tr>
+                <tr>
                   <td>DPI</td>
                   <td>{{ config.dpi }}</td>
                 </tr>
@@ -243,6 +254,7 @@ const config = ref<PlotConfig>({
   pointSize: 3,
   colorScheme: 'default',
   showWeights: true,
+  showValues: true,
 })
 
 // Limits mode handling
