@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, toRaw } from 'vue'
 import type { Session, DataVersion, PlotConfig, ForestPlotData } from '@/types'
 import { defaultPlotConfig } from '@/types'
 import {
@@ -87,7 +87,7 @@ export const useSessionStore = defineStore('session', () => {
     activeSessionId.value = session.id
     activeDataVersionIndex.value = 0
 
-    await saveSession(session)
+    await saveSession(toRaw(session))
     return session
   }
 
@@ -101,7 +101,7 @@ export const useSessionStore = defineStore('session', () => {
     }
 
     Object.assign(session, updates, { modified: new Date() })
-    await saveSession(session)
+    await saveSession(toRaw(session))
   }
 
   async function renameSession(id: string, name: string): Promise<void> {
@@ -217,7 +217,7 @@ export const useSessionStore = defineStore('session', () => {
       throw new Error(`Session ${id} not found`)
     }
 
-    return JSON.stringify(session, null, 2)
+    return JSON.stringify(toRaw(session), null, 2)
   }
 
   async function importSession(jsonData: string): Promise<Session> {
@@ -229,13 +229,13 @@ export const useSessionStore = defineStore('session', () => {
     session.modified = new Date()
 
     sessions.value.unshift(session)
-    await saveSession(session)
+    await saveSession(toRaw(session))
 
     return session
   }
 
   async function exportAllSessions(): Promise<string> {
-    return JSON.stringify(sessions.value, null, 2)
+    return JSON.stringify(toRaw(sessions.value), null, 2)
   }
 
   return {
