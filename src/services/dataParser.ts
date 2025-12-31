@@ -25,10 +25,10 @@ export function validateRow(row: any, index: number): ValidationResult {
     errors.push(`Row ${index + 1}: Study name is required`)
   }
 
-  if (row.effect === undefined || row.effect === null || row.effect === '') {
-    errors.push(`Row ${index + 1}: Effect size is required`)
-  } else if (isNaN(Number(row.effect))) {
-    errors.push(`Row ${index + 1}: Effect size must be a number`)
+  if (row.value === undefined || row.value === null || row.value === '') {
+    errors.push(`Row ${index + 1}: Value is required`)
+  } else if (isNaN(Number(row.value))) {
+    errors.push(`Row ${index + 1}: Value must be a number`)
   }
 
   if (row.ci_lower === undefined || row.ci_lower === null || row.ci_lower === '') {
@@ -90,13 +90,13 @@ export function parseCSV(csvText: string): ParsedData {
 
     // Find column indices
     const studyIdx = header.findIndex(h => h === 'study')
-    const effectIdx = header.findIndex(h => h === 'effect')
+    const valueIdx = header.findIndex(h => h === 'value' || h === 'effect')
     const ciLowerIdx = header.findIndex(h => h === 'ci_lower' || h === 'lower' || h === 'cilower')
     const ciUpperIdx = header.findIndex(h => h === 'ci_upper' || h === 'upper' || h === 'ciupper')
     const weightIdx = header.findIndex(h => h === 'weight')
 
     if (studyIdx === -1) errors.push('Missing "study" column')
-    if (effectIdx === -1) errors.push('Missing "effect" column')
+    if (valueIdx === -1) errors.push('Missing "value" or "effect" column')
     if (ciLowerIdx === -1) errors.push('Missing "ci_lower" or "lower" column')
     if (ciUpperIdx === -1) errors.push('Missing "ci_upper" or "upper" column')
 
@@ -112,7 +112,7 @@ export function parseCSV(csvText: string): ParsedData {
 
       const row = {
         study: values[studyIdx],
-        effect: values[effectIdx],
+        value: values[valueIdx],
         ci_lower: values[ciLowerIdx],
         ci_upper: values[ciUpperIdx],
         weight: weightIdx !== -1 ? values[weightIdx] : undefined,
@@ -125,7 +125,7 @@ export function parseCSV(csvText: string): ParsedData {
       if (validation.isValid) {
         data.push({
           study: String(row.study),
-          effect: Number(row.effect),
+          value: Number(row.value),
           ci_lower: Number(row.ci_lower),
           ci_upper: Number(row.ci_upper),
           weight: row.weight ? Number(row.weight) : undefined,
@@ -199,7 +199,7 @@ export function parseExcel(
       // Map columns
       const row = {
         study: normalizedRow.study || normalizedRow['study_name'] || normalizedRow.name,
-        effect: normalizedRow.effect || normalizedRow.effect_size || normalizedRow.es,
+        value: normalizedRow.value || normalizedRow.effect || normalizedRow.effect_size || normalizedRow.es,
         ci_lower: normalizedRow.ci_lower || normalizedRow.lower || normalizedRow.cilower || normalizedRow.lower_ci,
         ci_upper: normalizedRow.ci_upper || normalizedRow.upper || normalizedRow.ciupper || normalizedRow.upper_ci,
         weight: normalizedRow.weight || normalizedRow.w,
@@ -212,7 +212,7 @@ export function parseExcel(
       if (validation.isValid) {
         data.push({
           study: String(row.study),
-          effect: Number(row.effect),
+          value: Number(row.value),
           ci_lower: Number(row.ci_lower),
           ci_upper: Number(row.ci_upper),
           weight: row.weight !== undefined ? Number(row.weight) : undefined,

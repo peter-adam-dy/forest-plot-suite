@@ -119,9 +119,9 @@
             </v-col>
             <v-col cols="6">
               <v-select
-                v-model="columnMapping.effect"
+                v-model="columnMapping.value"
                 :items="availableColumns"
-                :label="`Effect Size ${orientation === 'rows' ? 'Column' : 'Row'} *`"
+                :label="`Value ${orientation === 'rows' ? 'Column' : 'Row'} *`"
                 variant="outlined"
                 density="compact"
                 @update:model-value="updatePreview"
@@ -197,7 +197,7 @@
             <thead>
               <tr>
                 <th>Study</th>
-                <th>Effect</th>
+                <th>Value</th>
                 <th>Lower CI</th>
                 <th>Upper CI</th>
                 <th>Weight</th>
@@ -206,7 +206,7 @@
             <tbody>
               <tr v-for="(row, idx) in parseResult.data.slice(0, 5)" :key="idx">
                 <td>{{ row.study }}</td>
-                <td>{{ row.effect }}</td>
+                <td>{{ row.value }}</td>
                 <td>{{ row.ci_lower }}</td>
                 <td>{{ row.ci_upper }}</td>
                 <td>{{ row.weight ?? '-' }}</td>
@@ -284,7 +284,7 @@ const rawData = ref<any[]>([])
 const availableColumns = ref<{ title: string; value: string }[]>([])
 const columnMapping = ref({
   study: null as string | null,
-  effect: null as string | null,
+  value: null as string | null,
   ci_lower: null as string | null,
   ci_upper: null as string | null,
   weight: null as string | null,
@@ -518,12 +518,12 @@ function autoMapColumns() {
     columnMapping.value.study = availableColumns.value[studyIdx].value
   }
 
-  // Auto-map effect
-  const effectIdx = columns.findIndex(c =>
-    c.includes('effect') || c.includes('hr') || c.includes('or') || c.includes('rr') || c.includes('ratio')
+  // Auto-map value
+  const valueIdx = columns.findIndex(c =>
+    c.includes('value') || c.includes('effect') || c.includes('hr') || c.includes('or') || c.includes('rr') || c.includes('ratio')
   )
-  if (effectIdx !== -1 && availableColumns.value[effectIdx]) {
-    columnMapping.value.effect = availableColumns.value[effectIdx].value
+  if (valueIdx !== -1 && availableColumns.value[valueIdx]) {
+    columnMapping.value.value = availableColumns.value[valueIdx].value
   }
 
   // Auto-map lower CI
@@ -551,14 +551,14 @@ function autoMapColumns() {
   }
 
   // Trigger preview if we have required fields
-  if (columnMapping.value.study && columnMapping.value.effect &&
+  if (columnMapping.value.study && columnMapping.value.value &&
       columnMapping.value.ci_lower && columnMapping.value.ci_upper) {
     updatePreview()
   }
 }
 
 function updatePreview() {
-  if (!columnMapping.value.study || !columnMapping.value.effect ||
+  if (!columnMapping.value.study || !columnMapping.value.value ||
       !columnMapping.value.ci_lower || !columnMapping.value.ci_upper) {
     parseResult.value = null
     return
@@ -571,7 +571,7 @@ function updatePreview() {
   rawData.value.forEach((row, idx) => {
     const rowData = {
       study: row[columnMapping.value.study!],
-      effect: row[columnMapping.value.effect!],
+      value: row[columnMapping.value.value!],
       ci_lower: row[columnMapping.value.ci_lower!],
       ci_upper: row[columnMapping.value.ci_upper!],
       weight: columnMapping.value.weight ? row[columnMapping.value.weight] : undefined,
@@ -583,12 +583,12 @@ function updatePreview() {
       return
     }
 
-    const effect = parseNumber(rowData.effect)
+    const value = parseNumber(rowData.value)
     const ciLower = parseNumber(rowData.ci_lower)
     const ciUpper = parseNumber(rowData.ci_upper)
 
-    if (isNaN(effect)) {
-      errors.push(`${orientation.value === 'rows' ? 'Row' : 'Column'} ${idx + 1}: Effect size must be a number`)
+    if (isNaN(value)) {
+      errors.push(`${orientation.value === 'rows' ? 'Row' : 'Column'} ${idx + 1}: Value must be a number`)
       return
     }
     if (isNaN(ciLower)) {
@@ -606,7 +606,7 @@ function updatePreview() {
 
     data.push({
       study: String(rowData.study),
-      effect,
+      value,
       ci_lower: ciLower,
       ci_upper: ciUpper,
       weight: rowData.weight ? parseNumber(rowData.weight) : undefined,
@@ -642,7 +642,7 @@ function reset() {
   availableColumns.value = []
   columnMapping.value = {
     study: null,
-    effect: null,
+    value: null,
     ci_lower: null,
     ci_upper: null,
     weight: null,

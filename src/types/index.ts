@@ -1,6 +1,6 @@
 export interface ForestPlotData {
   study: string
-  effect: number
+  value: number
   ci_lower: number
   ci_upper: number
   weight?: number
@@ -20,7 +20,6 @@ export interface DataVersion {
 }
 
 export type AxisType = 'linear' | 'log2' | 'loge' | 'log10'
-export type EffectMeasure = 'RR' | 'OR' | 'HR' | 'MD' | 'SMD'
 export type DPI = 72 | 150 | 300 | 600
 
 export interface PlotConfig {
@@ -31,12 +30,10 @@ export interface PlotConfig {
   xLabel: string
   yLabel: string
   dpi: DPI
-  effectMeasure: EffectMeasure
   pointSize: number
   colorScheme: string
-  showWeights: boolean
   showValues: boolean
-  showMetadata: boolean
+  referenceLineValue: number | null
   width: number | 'auto'
   height: number | 'auto'
 }
@@ -56,15 +53,13 @@ export const defaultPlotConfig: PlotConfig = {
   xLimits: 'auto',
   title: 'Forest Plot',
   subtitle: '',
-  xLabel: 'Effect Size',
+  xLabel: 'Value',
   yLabel: 'Study',
   dpi: 300,
-  effectMeasure: 'RR',
   pointSize: 3,
   colorScheme: 'default',
-  showWeights: true,
   showValues: true,
-  showMetadata: false,
+  referenceLineValue: null,
   width: 'auto',
   height: 'auto',
 }

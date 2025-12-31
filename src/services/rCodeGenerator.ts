@@ -23,26 +23,16 @@ ${plotCode}
 `
 }
 
-function getNoEffectValue(effectMeasure: string): number {
-  // For ratio measures (RR, OR, HR), no effect is at 1
-  // For difference measures (MD, SMD), no effect is at 0
-  if (['RR', 'OR', 'HR'].includes(effectMeasure)) {
-    return 1
-  } else {
-    return 0
-  }
-}
-
 function buildGgplot2DataFrame(data: ForestPlotData[]): string {
   const studies = data.map(d => `"${d.study.replace(/"/g, '\\"')}"`).join(', ')
-  const effects = data.map(d => d.effect).join(', ')
+  const values = data.map(d => d.value).join(', ')
   const ciLowers = data.map(d => d.ci_lower).join(', ')
   const ciUppers = data.map(d => d.ci_upper).join(', ')
 
   return `
 dat <- data.frame(
   study = c(${studies}),
-  effect = c(${effects}),
+  value = c(${values}),
   ci_lower = c(${ciLowers}),
   ci_upper = c(${ciUppers}),
   stringsAsFactors = FALSE
@@ -54,8 +44,6 @@ dat$study <- factor(dat$study, levels = rev(dat$study))
 }
 
 function buildGgplot2PlotCode(data: ForestPlotData[], config: PlotConfig): string {
-  const refValue = getNoEffectValue(config.effectMeasure)
-
   // Combine title and subtitle with newline
   const titleLine = config.subtitle
     ? `ggtitle("${config.title}\\n${config.subtitle}")`
@@ -68,20 +56,24 @@ function buildGgplot2PlotCode(data: ForestPlotData[], config: PlotConfig): strin
 
   // Label code conditional on showValues
   const labelCode = config.showValues ? `
-  dat$label <- sprintf("%.2f\\n(%.2f–%.2f)", dat$effect, dat$ci_lower, dat$ci_upper)
+  dat$label <- sprintf("%.2f\\n(%.2f–%.2f)", dat$value, dat$ci_lower, dat$ci_upper)
 ` : ''
 
   const labelGeom = config.showValues ? `
   geom_text(aes(label = label), position = position_nudge(y = -0.25), vjust = 1, size = 3.3) +` : ''
 
   const pointColor = getGgplot2Color(config.colorScheme)
-  const xlab = config.xLabel || getDefaultXLabel(config.effectMeasure, config.axisType)
+  const xlab = config.xLabel || 'Value'
+
+  // Reference line (only if specified)
+  const refLine = config.referenceLineValue !== null
+    ? `geom_vline(xintercept = ${config.referenceLineValue}, linetype = "dashed", color = "grey50") +\n  `
+    : ''
 
   return `
 ${labelCode}
-p <- ggplot(dat, aes(x = effect, y = study)) +
-  geom_vline(xintercept = ${refValue}, linetype = "dashed", color = "grey50") +
-  geom_point(size = ${config.pointSize}, color = "${pointColor}") +
+p <- ggplot(dat, aes(x = value, y = study)) +
+  ${refLine}geom_point(size = ${config.pointSize}, color = "${pointColor}") +
   geom_errorbar(aes(xmin = ci_lower, xmax = ci_upper), width = 0, linewidth = 0.7, color = "${pointColor}") +
   ${scaleCode}${xlimCode ? `\n  ${xlimCode} +` : ''}
   xlab("${xlab}") +
@@ -117,7 +109,7 @@ function buildGgplot2Limits(data: ForestPlotData[], config: PlotConfig): string 
   }
 
   // Auto limits with padding (÷1.3, ×1.3)
-  const allValues = data.flatMap(d => [d.ci_lower, d.effect, d.ci_upper])
+  const allValues = data.flatMap(d => [d.ci_lower, d.value, d.ci_upper])
   const minVal = Math.min(...allValues)
   const maxVal = Math.max(...allValues)
   const xMin = minVal / 1.3
@@ -136,18 +128,6 @@ function getGgplot2Color(scheme: string): string {
   }
 }
 
-function getDefaultXLabel(effectMeasure: string, axisType: string): string {
-  const measureLabel = effectMeasure === 'RR' ? 'Risk Ratio' :
-                       effectMeasure === 'OR' ? 'Odds Ratio' :
-                       effectMeasure === 'HR' ? 'Hazard Ratio' :
-                       effectMeasure === 'MD' ? 'Mean Difference' :
-                       effectMeasure === 'SMD' ? 'Standardized Mean Difference' :
-                       'Effect Size'
-
-  const scaleLabel = axisType !== 'linear' ? ' (log scale)' : ''
-  return `${measureLabel}${scaleLabel}`
-}
-
 export function validateData(data: ForestPlotData[]): { valid: boolean; errors: string[] } {
   const errors: string[] = []
 
@@ -160,8 +140,8 @@ export function validateData(data: ForestPlotData[]): { valid: boolean; errors: 
     if (!row.study || row.study.trim() === '') {
       errors.push(`Row ${idx + 1}: Study name is required`)
     }
-    if (isNaN(row.effect)) {
-      errors.push(`Row ${idx + 1}: Effect size must be a valid number`)
+    if (isNaN(row.value)) {
+      errors.push(`Row ${idx + 1}: Value must be a valid number`)
     }
     if (isNaN(row.ci_lower)) {
       errors.push(`Row ${idx + 1}: Lower CI must be a valid number`)

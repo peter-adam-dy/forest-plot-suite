@@ -61,9 +61,9 @@
             ></v-text-field>
           </template>
 
-          <template v-slot:item.effect="{ item }">
+          <template v-slot:item.value="{ item }">
             <v-text-field
-              v-model.number="item.effect"
+              v-model.number="item.value"
               type="number"
               step="0.01"
               density="compact"
@@ -199,7 +199,7 @@ const isInitialLoad = ref(true)
 
 const headers = [
   { title: 'Study', key: 'study', sortable: true, width: '25%' },
-  { title: 'Effect Size', key: 'effect', sortable: true, width: '15%' },
+  { title: 'Value', key: 'value', sortable: true, width: '15%' },
   { title: 'Lower CI', key: 'ci_lower', sortable: true, width: '15%' },
   { title: 'Upper CI', key: 'ci_upper', sortable: true, width: '15%' },
   { title: 'Weight', key: 'weight', sortable: true, width: '15%' },
@@ -301,7 +301,7 @@ watchDebounced(
 function addRow() {
   localData.value.push({
     study: '',
-    effect: 0,
+    value: 0,
     ci_lower: 0,
     ci_upper: 0,
     weight: undefined,

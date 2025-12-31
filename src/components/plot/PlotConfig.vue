@@ -48,15 +48,6 @@
               class="mb-3"
               @update:model-value="updateConfig"
             ></v-text-field>
-
-            <v-select
-              v-model="config.effectMeasure"
-              :items="effectMeasureOptions"
-              label="Effect Measure"
-              variant="outlined"
-              density="compact"
-              @update:model-value="updateConfig"
-            ></v-select>
           </v-card-text>
         </v-card>
       </v-col>
@@ -110,6 +101,20 @@
                 ></v-text-field>
               </v-col>
             </v-row>
+
+            <v-text-field
+              v-model.number="config.referenceLineValue"
+              label="Reference Line Value (optional)"
+              type="number"
+              step="0.1"
+              variant="outlined"
+              density="compact"
+              class="mt-3"
+              clearable
+              hint="Leave empty for no reference line"
+              persistent-hint
+              @update:model-value="updateConfig"
+            ></v-text-field>
           </v-card-text>
         </v-card>
       </v-col>
@@ -140,22 +145,8 @@
             ></v-select>
 
             <v-checkbox
-              v-model="config.showWeights"
-              label="Show study weights"
-              density="compact"
-              @update:model-value="updateConfig"
-            ></v-checkbox>
-
-            <v-checkbox
               v-model="config.showValues"
-              label="Show effect values and CIs"
-              density="compact"
-              @update:model-value="updateConfig"
-            ></v-checkbox>
-
-            <v-checkbox
-              v-model="config.showMetadata"
-              label="Show heterogeneity and test statistics"
+              label="Show values and confidence intervals"
               density="compact"
               @update:model-value="updateConfig"
             ></v-checkbox>
@@ -251,16 +242,16 @@
                   <td>{{ config.subtitle || '(none)' }}</td>
                 </tr>
                 <tr>
-                  <td>Effect Measure</td>
-                  <td>{{ config.effectMeasure }}</td>
-                </tr>
-                <tr>
                   <td>X-Axis Scale</td>
                   <td>{{ axisTypeLabels[config.axisType] }}</td>
                 </tr>
                 <tr>
                   <td>X-Axis Limits</td>
                   <td>{{ config.xLimits === 'auto' ? 'Auto' : `[${config.xLimits[0]}, ${config.xLimits[1]}]` }}</td>
+                </tr>
+                <tr>
+                  <td>Reference Line</td>
+                  <td>{{ config.referenceLineValue !== null ? config.referenceLineValue : 'None' }}</td>
                 </tr>
                 <tr>
                   <td>Point Size</td>
@@ -271,16 +262,8 @@
                   <td>{{ config.colorScheme }}</td>
                 </tr>
                 <tr>
-                  <td>Show Weights</td>
-                  <td>{{ config.showWeights ? 'Yes' : 'No' }}</td>
-                </tr>
-                <tr>
                   <td>Show Values</td>
                   <td>{{ config.showValues ? 'Yes' : 'No' }}</td>
-                </tr>
-                <tr>
-                  <td>Show Metadata</td>
-                  <td>{{ config.showMetadata ? 'Yes' : 'No' }}</td>
                 </tr>
                 <tr>
                   <td>DPI</td>
@@ -309,15 +292,13 @@ const config = ref<PlotConfig>({
   xLimits: 'auto',
   title: 'Forest Plot',
   subtitle: '',
-  xLabel: 'Effect Size',
+  xLabel: 'Value',
   yLabel: 'Study',
   dpi: 300,
-  effectMeasure: 'RR',
   pointSize: 3,
   colorScheme: 'default',
-  showWeights: true,
   showValues: true,
-  showMetadata: false,
+  referenceLineValue: null,
   width: 'auto',
   height: 'auto',
 })
@@ -345,14 +326,6 @@ const axisTypeLabels: Record<AxisType, string> = {
   loge: 'Natural Log (ln)',
   log10: 'Log base 10',
 }
-
-const effectMeasureOptions = [
-  { title: 'Risk Ratio (RR)', value: 'RR' },
-  { title: 'Odds Ratio (OR)', value: 'OR' },
-  { title: 'Hazard Ratio (HR)', value: 'HR' },
-  { title: 'Mean Difference (MD)', value: 'MD' },
-  { title: 'Standardized Mean Difference (SMD)', value: 'SMD' },
-]
 
 const dpiOptions = [
   { title: '72 DPI (Screen)', value: 72 },
