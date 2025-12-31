@@ -25,7 +25,7 @@ export function calculatePlotDimensions(
 
   // Calculate auto dimensions
   const width = config.width !== 'auto' ? config.width : getAutoWidth()
-  const height = config.height !== 'auto' ? config.height : getAutoHeight(studyCount)
+  const height = config.height !== 'auto' ? config.height : getAutoHeight(studyCount, config.showValues)
 
   return { width, height }
 }
@@ -34,11 +34,11 @@ function getAutoWidth(): number {
   return 10  // Standard width for ggplot2 layout
 }
 
-function getAutoHeight(studyCount: number): number {
+function getAutoHeight(studyCount: number, showValues: boolean): number {
   // ggplot2: ~0.5 inches per study
   // Base: 2.5 inches for title, axis labels, margins
-  // Per study: 0.5 inches (point + error bar + label space)
-  const baseHeight = 2.5
+  // Additional 1 inch when showing values to accommodate labels below bottom point
+  const baseHeight = 2.5 + (showValues ? 1 : 0)
   const heightPerStudy = 0.5
   const calculatedHeight = baseHeight + studyCount * heightPerStudy
 

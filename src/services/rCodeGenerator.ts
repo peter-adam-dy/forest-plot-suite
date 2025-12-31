@@ -60,7 +60,10 @@ function buildGgplot2PlotCode(data: ForestPlotData[], config: PlotConfig): strin
 ` : ''
 
   const labelGeom = config.showValues ? `
-  geom_text(aes(label = label), position = position_nudge(y = -0.25), vjust = 1, size = 3.3) +` : ''
+  geom_text(aes(label = label), position = position_nudge(y = -0.12), vjust = 1, size = 3.3) +` : ''
+
+  // Increase bottom margin when showing values to prevent overlap
+  const bottomMargin = config.showValues ? 35 : 20
 
   const pointColor = getGgplot2Color(config.colorScheme)
   const xlab = config.xLabel || 'Value'
@@ -92,7 +95,7 @@ p <- ggplot(dat, aes(x = value, y = study)) +
     panel.grid.major.y = element_blank(),
     panel.grid.minor = element_blank(),
     panel.grid.major.x = ${gridLineStyle},
-    plot.margin = margin(t = 5.5, r = 10, b = 20, l = 10),
+    plot.margin = margin(t = 5.5, r = 10, b = ${bottomMargin}, l = 10),
     axis.title.x = element_text(margin = margin(t = 8)),
     axis.text.y = element_text(margin = margin(r = 5))
   )${titleLine ? `\n\np <- p + ${titleLine}` : ''}
