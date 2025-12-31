@@ -39,7 +39,7 @@ class WebRServiceImpl implements WebRService {
 
       // Install required packages
       console.log('Installing R packages...')
-      await this.installPackages(['meta', 'metafor', 'grid', 'jsonlite', 'ggplot2'])
+      await this.installPackages(['ggplot2', 'jsonlite'])
       console.log('R packages installed successfully')
 
       this.ready = true

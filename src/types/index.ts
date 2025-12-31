@@ -19,13 +19,11 @@ export interface DataVersion {
   data: ForestPlotData[]
 }
 
-export type LayoutStyle = 'classic' | 'modern'
 export type AxisType = 'linear' | 'log2' | 'loge' | 'log10'
 export type EffectMeasure = 'RR' | 'OR' | 'HR' | 'MD' | 'SMD'
 export type DPI = 72 | 150 | 300 | 600
 
 export interface PlotConfig {
-  layoutStyle: LayoutStyle
   axisType: AxisType
   xLimits: [number, number] | 'auto'
   title: string
@@ -54,7 +52,6 @@ export interface Session {
 }
 
 export const defaultPlotConfig: PlotConfig = {
-  layoutStyle: 'classic',
   axisType: 'linear',
   xLimits: 'auto',
   title: 'Forest Plot',

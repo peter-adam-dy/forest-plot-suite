@@ -4,6 +4,18 @@
       <v-card-title class="d-flex align-center">
         <span>Data Editor</span>
         <v-spacer></v-spacer>
+
+        <!-- Save Status Indicator -->
+        <v-chip
+          v-if="saveStatus !== 'idle'"
+          :color="saveStatusColor"
+          size="small"
+          class="mr-2"
+        >
+          <v-icon start size="small">{{ saveStatusIcon }}</v-icon>
+          {{ saveStatusText }}
+        </v-chip>
+
         <v-btn
           color="primary"
           prepend-icon="mdi-plus"
@@ -16,18 +28,27 @@
         <v-btn
           color="success"
           prepend-icon="mdi-file-import"
-          @click="showImportMenu = true"
+          @click="triggerFileImport"
           size="small"
         >
           Import
         </v-btn>
+
+        <!-- Hidden file input for unified import -->
+        <input
+          ref="fileInput"
+          type="file"
+          accept=".csv,.xlsx,.xls,.tsv"
+          @change="handleFileSelect"
+          style="display: none"
+        />
       </v-card-title>
 
       <v-card-text>
         <v-data-table
           :headers="headers"
           :items="localData"
-          :items-per-page="10"
+          :items-per-page="-1"
           class="elevation-1"
         >
           <template v-slot:item.study="{ item }">
@@ -134,39 +155,7 @@
           </v-alert>
         </div>
       </v-card-text>
-
-      <v-card-actions>
-        <v-spacer></v-spacer>
-        <v-btn
-          color="primary"
-          @click="saveData"
-          :disabled="validationErrors.length > 0 || localData.length === 0"
-        >
-          Save Data
-        </v-btn>
-      </v-card-actions>
     </v-card>
-
-    <!-- Import Menu -->
-    <v-menu v-model="showImportMenu" :close-on-content-click="false">
-      <template v-slot:activator="{ props }">
-        <div v-bind="props" style="display: none"></div>
-      </template>
-      <v-list>
-        <v-list-item @click="openCSVImport">
-          <v-list-item-title>
-            <v-icon start>mdi-file-delimited</v-icon>
-            Import CSV
-          </v-list-item-title>
-        </v-list-item>
-        <v-list-item @click="openExcelImport">
-          <v-list-item-title>
-            <v-icon start>mdi-file-excel</v-icon>
-            Import Excel
-          </v-list-item-title>
-        </v-list-item>
-      </v-list>
-    </v-menu>
 
     <!-- CSV Import Dialog -->
     <CSVImporter
@@ -189,6 +178,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { watchDebounced } from '@vueuse/core'
 import { useSessionStore } from '@/stores/session'
 import type { ForestPlotData } from '@/types'
 import { validateData } from '@/services/dataParser'
@@ -198,19 +188,21 @@ import ExcelImporter from './ExcelImporter.vue'
 const sessionStore = useSessionStore()
 
 const localData = ref<ForestPlotData[]>([])
-const showImportMenu = ref(false)
+const fileInput = ref<HTMLInputElement | null>(null)
 const csvImportDialog = ref(false)
 const excelImportDialog = ref(false)
 const snackbar = ref(false)
 const snackbarMessage = ref('')
 const snackbarColor = ref('success')
+const saveStatus = ref<'idle' | 'saving' | 'saved' | 'error'>('idle')
+const isInitialLoad = ref(true)
 
 const headers = [
-  { title: 'Study', key: 'study', sortable: false, width: '25%' },
-  { title: 'Effect Size', key: 'effect', sortable: false, width: '15%' },
-  { title: 'Lower CI', key: 'ci_lower', sortable: false, width: '15%' },
-  { title: 'Upper CI', key: 'ci_upper', sortable: false, width: '15%' },
-  { title: 'Weight', key: 'weight', sortable: false, width: '15%' },
+  { title: 'Study', key: 'study', sortable: true, width: '25%' },
+  { title: 'Effect Size', key: 'effect', sortable: true, width: '15%' },
+  { title: 'Lower CI', key: 'ci_lower', sortable: true, width: '15%' },
+  { title: 'Upper CI', key: 'ci_upper', sortable: true, width: '15%' },
+  { title: 'Weight', key: 'weight', sortable: true, width: '15%' },
   { title: 'Actions', key: 'actions', sortable: false, width: '15%' },
 ]
 
@@ -218,17 +210,92 @@ const validationResult = computed(() => validateData(localData.value))
 const validationErrors = computed(() => validationResult.value.errors)
 const validationWarnings = computed(() => validationResult.value.warnings)
 
+// Save status computed properties
+const saveStatusColor = computed(() => {
+  switch (saveStatus.value) {
+    case 'saving': return 'info'
+    case 'saved': return 'success'
+    case 'error': return 'error'
+    default: return 'default'
+  }
+})
+
+const saveStatusIcon = computed(() => {
+  switch (saveStatus.value) {
+    case 'saving': return 'mdi-loading mdi-spin'
+    case 'saved': return 'mdi-check'
+    case 'error': return 'mdi-alert'
+    default: return ''
+  }
+})
+
+const saveStatusText = computed(() => {
+  switch (saveStatus.value) {
+    case 'saving': return 'Saving...'
+    case 'saved': return 'Saved'
+    case 'error': return 'Save failed'
+    default: return ''
+  }
+})
+
 // Load data from active session
 watch(
   () => sessionStore.activeDataVersion,
   (dataVersion) => {
+    isInitialLoad.value = true
     if (dataVersion) {
       localData.value = JSON.parse(JSON.stringify(dataVersion.data))
     } else {
       localData.value = []
     }
+    // Reset save status and allow auto-save after initial load
+    saveStatus.value = 'idle'
+    setTimeout(() => {
+      isInitialLoad.value = false
+    }, 100)
   },
   { immediate: true }
+)
+
+// Auto-save data changes with debouncing
+watchDebounced(
+  localData,
+  async () => {
+    // Skip auto-save during initial load or if there are errors
+    if (isInitialLoad.value || validationErrors.value.length > 0) {
+      return
+    }
+
+    // Skip if data is empty
+    if (localData.value.length === 0) {
+      saveStatus.value = 'idle'
+      return
+    }
+
+    try {
+      saveStatus.value = 'saving'
+      await sessionStore.updateData(localData.value)
+      saveStatus.value = 'saved'
+
+      // Clear "saved" status after 2 seconds
+      setTimeout(() => {
+        if (saveStatus.value === 'saved') {
+          saveStatus.value = 'idle'
+        }
+      }, 2000)
+    } catch (error) {
+      console.error('Auto-save failed:', error)
+      saveStatus.value = 'error'
+
+      // Clear error status after 3 seconds
+      setTimeout(() => {
+        if (saveStatus.value === 'error') {
+          saveStatus.value = 'idle'
+        }
+      }, 3000)
+    }
+  },
+  { debounce: 500, deep: true }
 )
 
 function addRow() {
@@ -247,38 +314,42 @@ function deleteRow(index: number) {
 }
 
 function handleDataChange() {
-  // Trigger validation
+  // Trigger validation (auto-save will handle saving)
   validateData(localData.value)
 }
 
-async function saveData() {
-  if (validationErrors.value.length > 0) {
-    showSnackbar('Please fix validation errors before saving', 'error')
-    return
-  }
-
-  if (localData.value.length === 0) {
-    showSnackbar('Cannot save empty dataset', 'error')
-    return
-  }
-
-  try {
-    await sessionStore.updateData(localData.value)
-    showSnackbar('Data saved successfully', 'success')
-  } catch (error) {
-    console.error('Failed to save data:', error)
-    showSnackbar('Failed to save data', 'error')
-  }
+// Trigger file import by clicking hidden input
+function triggerFileImport() {
+  fileInput.value?.click()
 }
 
-function openCSVImport() {
-  showImportMenu.value = false
-  csvImportDialog.value = true
-}
+// Handle file selection and route to appropriate importer
+function handleFileSelect(event: Event) {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
 
-function openExcelImport() {
-  showImportMenu.value = false
-  excelImportDialog.value = true
+  if (!file) return
+
+  // Detect file type by extension
+  const fileName = file.name.toLowerCase()
+
+  if (fileName.endsWith('.csv') || fileName.endsWith('.tsv')) {
+    // CSV/TSV file - pass file to CSV importer
+    csvImportDialog.value = true
+  } else if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+    // Excel file - pass file to Excel importer
+    excelImportDialog.value = true
+  } else {
+    showSnackbar('Unsupported file type. Please use CSV, TSV, or Excel files.', 'error')
+  }
+
+  // Store file reference for the importers to access
+  if (fileInput.value) {
+    // The importers will handle the file directly
+  }
+
+  // Reset file input so the same file can be selected again
+  target.value = ''
 }
 
 function handleCSVImport(data: ForestPlotData[]) {

@@ -118,36 +118,6 @@
         <v-card>
           <v-card-title>Visual Style</v-card-title>
           <v-card-text>
-            <v-select
-              v-model="config.layoutStyle"
-              :items="layoutStyleOptions"
-              label="Plot Layout"
-              variant="outlined"
-              density="compact"
-              class="mb-3"
-              @update:model-value="updateConfig"
-            ></v-select>
-
-            <v-alert
-              v-if="config.layoutStyle === 'modern' && config.showWeights"
-              type="info"
-              variant="tonal"
-              density="compact"
-              class="mb-3"
-            >
-              Study weights are not displayed in modern layout
-            </v-alert>
-
-            <v-alert
-              v-if="config.layoutStyle === 'modern' && config.showMetadata"
-              type="info"
-              variant="tonal"
-              density="compact"
-              class="mb-3"
-            >
-              Heterogeneity statistics are not displayed in modern layout
-            </v-alert>
-
             <v-slider
               v-model="config.pointSize"
               label="Point Size"
@@ -281,10 +251,6 @@
                   <td>{{ config.subtitle || '(none)' }}</td>
                 </tr>
                 <tr>
-                  <td>Layout Style</td>
-                  <td>{{ config.layoutStyle === 'classic' ? 'Classic' : 'Modern' }}</td>
-                </tr>
-                <tr>
                   <td>Effect Measure</td>
                   <td>{{ config.effectMeasure }}</td>
                 </tr>
@@ -332,14 +298,13 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useSessionStore } from '@/stores/session'
-import type { PlotConfig, AxisType, LayoutStyle } from '@/types'
+import type { PlotConfig, AxisType } from '@/types'
 
 const sessionStore = useSessionStore()
 const activeSession = computed(() => sessionStore.activeSession)
 
 // Local config state
 const config = ref<PlotConfig>({
-  layoutStyle: 'classic',
   axisType: 'linear',
   xLimits: 'auto',
   title: 'Forest Plot',
@@ -380,11 +345,6 @@ const axisTypeLabels: Record<AxisType, string> = {
   loge: 'Natural Log (ln)',
   log10: 'Log base 10',
 }
-
-const layoutStyleOptions = [
-  { title: 'Classic (meta::forest)', value: 'classic' },
-  { title: 'Modern (ggplot2)', value: 'modern' },
-]
 
 const effectMeasureOptions = [
   { title: 'Risk Ratio (RR)', value: 'RR' },

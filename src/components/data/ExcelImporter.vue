@@ -251,6 +251,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { getExcelSheets } from '@/services/dataParser'
+import { parseNumber } from '@/utils/numberParser'
 import type { ParsedData, ForestPlotData } from '@/types'
 import * as XLSX from 'xlsx'
 
@@ -582,9 +583,9 @@ function updatePreview() {
       return
     }
 
-    const effect = Number(rowData.effect)
-    const ciLower = Number(rowData.ci_lower)
-    const ciUpper = Number(rowData.ci_upper)
+    const effect = parseNumber(rowData.effect)
+    const ciLower = parseNumber(rowData.ci_lower)
+    const ciUpper = parseNumber(rowData.ci_upper)
 
     if (isNaN(effect)) {
       errors.push(`${orientation.value === 'rows' ? 'Row' : 'Column'} ${idx + 1}: Effect size must be a number`)
@@ -608,7 +609,7 @@ function updatePreview() {
       effect,
       ci_lower: ciLower,
       ci_upper: ciUpper,
-      weight: rowData.weight ? Number(rowData.weight) : undefined,
+      weight: rowData.weight ? parseNumber(rowData.weight) : undefined,
     })
   })
 
