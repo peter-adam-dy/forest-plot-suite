@@ -164,6 +164,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useSessionStore } from '@/stores/session'
 import { getWebRService } from '@/services/webr'
 import { generateForestPlotCode, validateData } from '@/services/rCodeGenerator'
+import { calculatePlotDimensions } from '@/utils/plotDimensions'
 import type { AxisType } from '@/types'
 
 const sessionStore = useSessionStore()
@@ -270,9 +271,20 @@ async function generatePlot() {
     // Store generated code in session
     await sessionStore.updateGeneratedCode(rCode)
 
+    // Calculate plot dimensions
+    const dimensions = calculatePlotDimensions(
+      currentData.value.length,
+      activeSession.value.config
+    )
+
     // Execute R code and generate plot
     const webR = getWebRService()
-    const imageDataUrl = await webR.generatePlot(rCode, activeSession.value.config.dpi)
+    const imageDataUrl = await webR.generatePlot(
+      rCode,
+      activeSession.value.config.dpi,
+      dimensions.width,
+      dimensions.height
+    )
 
     plotImage.value = imageDataUrl
     generatedTime.value = new Date().toLocaleString()

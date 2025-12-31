@@ -4,7 +4,7 @@ export interface WebRService {
   initialize(): Promise<void>
   isReady(): boolean
   executeCode(code: string): Promise<string>
-  generatePlot(code: string, dpi: number): Promise<string>
+  generatePlot(code: string, dpi: number, widthInches?: number, heightInches?: number): Promise<string>
   installPackages(packages: string[]): Promise<void>
 }
 
@@ -39,7 +39,7 @@ class WebRServiceImpl implements WebRService {
 
       // Install required packages
       console.log('Installing R packages...')
-      await this.installPackages(['meta', 'metafor', 'grid', 'jsonlite'])
+      await this.installPackages(['meta', 'metafor', 'grid', 'jsonlite', 'ggplot2'])
       console.log('R packages installed successfully')
 
       this.ready = true
@@ -70,16 +70,18 @@ class WebRServiceImpl implements WebRService {
     }
   }
 
-  async generatePlot(code: string, dpi: number = 150): Promise<string> {
+  async generatePlot(
+    code: string,
+    dpi: number = 150,
+    widthInches: number = 10,
+    heightInches: number = 8
+  ): Promise<string> {
     if (!this.webR || !this.ready) {
       throw new Error('WebR is not initialized')
     }
 
     try {
-      // Calculate dimensions based on DPI
-      // Higher DPI = better quality but larger file
-      const widthInches = 14
-      const heightInches = 10
+      // Calculate pixel dimensions from inches and DPI
       const widthPixels = Math.round(widthInches * dpi)
       const heightPixels = Math.round(heightInches * dpi)
 

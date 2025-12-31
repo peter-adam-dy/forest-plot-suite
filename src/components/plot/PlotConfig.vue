@@ -118,6 +118,36 @@
         <v-card>
           <v-card-title>Visual Style</v-card-title>
           <v-card-text>
+            <v-select
+              v-model="config.layoutStyle"
+              :items="layoutStyleOptions"
+              label="Plot Layout"
+              variant="outlined"
+              density="compact"
+              class="mb-3"
+              @update:model-value="updateConfig"
+            ></v-select>
+
+            <v-alert
+              v-if="config.layoutStyle === 'modern' && config.showWeights"
+              type="info"
+              variant="tonal"
+              density="compact"
+              class="mb-3"
+            >
+              Study weights are not displayed in modern layout
+            </v-alert>
+
+            <v-alert
+              v-if="config.layoutStyle === 'modern' && config.showMetadata"
+              type="info"
+              variant="tonal"
+              density="compact"
+              class="mb-3"
+            >
+              Heterogeneity statistics are not displayed in modern layout
+            </v-alert>
+
             <v-slider
               v-model="config.pointSize"
               label="Point Size"
@@ -173,8 +203,59 @@
               label="Resolution (DPI)"
               variant="outlined"
               density="compact"
+              class="mb-3"
               @update:model-value="updateConfig"
             ></v-select>
+
+            <v-radio-group
+              v-model="dimensionsMode"
+              inline
+              density="compact"
+              class="mb-2"
+              @update:model-value="handleDimensionsModeChange"
+            >
+              <v-radio label="Auto Dimensions" value="auto"></v-radio>
+              <v-radio label="Manual Dimensions" value="manual"></v-radio>
+            </v-radio-group>
+
+            <v-row v-if="dimensionsMode === 'manual'">
+              <v-col cols="6">
+                <v-text-field
+                  v-model.number="manualWidth"
+                  label="Width (inches)"
+                  type="number"
+                  step="0.5"
+                  :min="4"
+                  :max="24"
+                  variant="outlined"
+                  density="compact"
+                  @update:model-value="handleManualDimensionsChange"
+                ></v-text-field>
+              </v-col>
+              <v-col cols="6">
+                <v-text-field
+                  v-model.number="manualHeight"
+                  label="Height (inches)"
+                  type="number"
+                  step="0.5"
+                  :min="4"
+                  :max="32"
+                  variant="outlined"
+                  density="compact"
+                  @update:model-value="handleManualDimensionsChange"
+                ></v-text-field>
+              </v-col>
+            </v-row>
+
+            <v-alert
+              v-if="dimensionsMode === 'auto'"
+              type="info"
+              variant="tonal"
+              density="compact"
+              class="mt-2"
+            >
+              Dimensions calculated from study count
+            </v-alert>
           </v-card-text>
         </v-card>
       </v-col>
@@ -198,6 +279,10 @@
                 <tr>
                   <td>Subtitle</td>
                   <td>{{ config.subtitle || '(none)' }}</td>
+                </tr>
+                <tr>
+                  <td>Layout Style</td>
+                  <td>{{ config.layoutStyle === 'classic' ? 'Classic' : 'Modern' }}</td>
                 </tr>
                 <tr>
                   <td>Effect Measure</td>
@@ -247,13 +332,14 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useSessionStore } from '@/stores/session'
-import type { PlotConfig, AxisType } from '@/types'
+import type { PlotConfig, AxisType, LayoutStyle } from '@/types'
 
 const sessionStore = useSessionStore()
 const activeSession = computed(() => sessionStore.activeSession)
 
 // Local config state
 const config = ref<PlotConfig>({
+  layoutStyle: 'classic',
   axisType: 'linear',
   xLimits: 'auto',
   title: 'Forest Plot',
@@ -267,11 +353,18 @@ const config = ref<PlotConfig>({
   showWeights: true,
   showValues: true,
   showMetadata: false,
+  width: 'auto',
+  height: 'auto',
 })
 
 // Limits mode handling
 const limitsMode = ref<'auto' | 'manual'>('auto')
 const manualLimits = ref<[number, number]>([0, 1])
+
+// Dimensions mode handling
+const dimensionsMode = ref<'auto' | 'manual'>('auto')
+const manualWidth = ref<number>(10)
+const manualHeight = ref<number>(8)
 
 // Options
 const axisTypeOptions = [
@@ -287,6 +380,11 @@ const axisTypeLabels: Record<AxisType, string> = {
   loge: 'Natural Log (ln)',
   log10: 'Log base 10',
 }
+
+const layoutStyleOptions = [
+  { title: 'Classic (meta::forest)', value: 'classic' },
+  { title: 'Modern (ggplot2)', value: 'modern' },
+]
 
 const effectMeasureOptions = [
   { title: 'Risk Ratio (RR)', value: 'RR' },
@@ -323,6 +421,19 @@ watch(activeSession, (session) => {
       limitsMode.value = 'manual'
       manualLimits.value = [...session.config.xLimits]
     }
+
+    // Set dimensions mode based on config
+    if (session.config.width === 'auto' && session.config.height === 'auto') {
+      dimensionsMode.value = 'auto'
+    } else {
+      dimensionsMode.value = 'manual'
+      if (typeof session.config.width === 'number') {
+        manualWidth.value = session.config.width
+      }
+      if (typeof session.config.height === 'number') {
+        manualHeight.value = session.config.height
+      }
+    }
   }
 }, { immediate: true })
 
@@ -340,6 +451,27 @@ function handleLimitsModeChange(mode: 'auto' | 'manual' | null) {
 function updateManualLimits() {
   if (limitsMode.value === 'manual') {
     config.value.xLimits = [manualLimits.value[0], manualLimits.value[1]]
+    updateConfig()
+  }
+}
+
+function handleDimensionsModeChange(mode: 'auto' | 'manual' | null) {
+  if (!mode) return
+
+  if (mode === 'auto') {
+    config.value.width = 'auto'
+    config.value.height = 'auto'
+  } else {
+    config.value.width = manualWidth.value
+    config.value.height = manualHeight.value
+  }
+  updateConfig()
+}
+
+function handleManualDimensionsChange() {
+  if (dimensionsMode.value === 'manual') {
+    config.value.width = manualWidth.value
+    config.value.height = manualHeight.value
     updateConfig()
   }
 }

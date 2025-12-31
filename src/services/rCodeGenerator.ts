@@ -8,6 +8,20 @@ export function generateForestPlotCode(
     throw new Error('No data provided for plot generation')
   }
 
+  // Branch based on layout style
+  if (config.layoutStyle === 'modern') {
+    return generateGgplot2Code(data, config)
+  } else {
+    return generateMetaForestCode(data, config)
+  }
+}
+
+// ========== Classic Layout (meta::forest) Functions ==========
+
+function generateMetaForestCode(
+  data: ForestPlotData[],
+  config: PlotConfig
+): string {
   // Build data frame
   const dataFrame = buildDataFrame(data)
 
@@ -178,6 +192,139 @@ function getColorScheme(scheme: string): string {
     case 'light': return '#87CEEB'
     default: return '#1E88E5'
   }
+}
+
+// ========== ggplot2 (Modern Layout) Functions ==========
+
+function generateGgplot2Code(data: ForestPlotData[], config: PlotConfig): string {
+  const dataFrame = buildGgplot2DataFrame(data)
+  const plotCode = buildGgplot2PlotCode(data, config)
+
+  return `
+# Load required libraries
+library(ggplot2)
+
+# Create data frame
+${dataFrame}
+
+# Generate ggplot2 forest plot
+${plotCode}
+`
+}
+
+function buildGgplot2DataFrame(data: ForestPlotData[]): string {
+  const studies = data.map(d => `"${d.study.replace(/"/g, '\\"')}"`).join(', ')
+  const effects = data.map(d => d.effect).join(', ')
+  const ciLowers = data.map(d => d.ci_lower).join(', ')
+  const ciUppers = data.map(d => d.ci_upper).join(', ')
+
+  return `
+dat <- data.frame(
+  study = c(${studies}),
+  effect = c(${effects}),
+  ci_lower = c(${ciLowers}),
+  ci_upper = c(${ciUppers}),
+  stringsAsFactors = FALSE
+)
+
+# Reverse order for top-to-bottom display
+dat$study <- factor(dat$study, levels = rev(dat$study))
+`
+}
+
+function buildGgplot2PlotCode(data: ForestPlotData[], config: PlotConfig): string {
+  const refValue = getNoEffectValue(config.effectMeasure)
+
+  // Combine title and subtitle with newline
+  const titleLine = config.subtitle
+    ? `ggtitle("${config.title}\\n${config.subtitle}")`
+    : config.title
+    ? `ggtitle("${config.title}")`
+    : ''
+
+  const scaleCode = buildGgplot2Scale(config)
+  const xlimCode = buildGgplot2Limits(data, config)
+
+  // Label code conditional on showValues
+  const labelCode = config.showValues ? `
+  dat$label <- sprintf("%.2f\\n(%.2f–%.2f)", dat$effect, dat$ci_lower, dat$ci_upper)
+` : ''
+
+  const labelGeom = config.showValues ? `
+  geom_text(aes(label = label), position = position_nudge(y = -0.25), vjust = 1, size = 3.3) +` : ''
+
+  const pointColor = getGgplot2Color(config.colorScheme)
+  const xlab = config.xLabel || getDefaultXLabel(config.effectMeasure, config.axisType)
+
+  return `
+${labelCode}
+p <- ggplot(dat, aes(x = effect, y = study)) +
+  geom_vline(xintercept = ${refValue}, linetype = "dashed", color = "grey50") +
+  geom_point(size = ${config.pointSize}, color = "${pointColor}") +
+  geom_errorbar(aes(xmin = ci_lower, xmax = ci_upper), width = 0, linewidth = 0.7, color = "${pointColor}") +
+  ${scaleCode}${xlimCode ? `\n  ${xlimCode} +` : ''}
+  xlab("${xlab}") +
+  ylab(NULL) +${labelGeom}
+  coord_cartesian(clip = "off") +
+  theme_bw(base_size = 13) +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_line(linewidth = 0.3, colour = "grey80"),
+    plot.margin = margin(t = 5.5, r = 10, b = 20, l = 10),
+    axis.title.x = element_text(margin = margin(t = 8)),
+    axis.text.y = element_text(margin = margin(r = 5))
+  )${titleLine ? `\n\np <- p + ${titleLine}` : ''}
+
+print(p)
+`
+}
+
+function buildGgplot2Scale(config: PlotConfig): string {
+  switch (config.axisType) {
+    case 'linear': return 'scale_x_continuous() +'
+    case 'log2': return 'scale_x_continuous(trans = "log2") +'
+    case 'loge': return 'scale_x_continuous(trans = "log") +'
+    case 'log10': return 'scale_x_log10() +'
+    default: return 'scale_x_continuous() +'
+  }
+}
+
+function buildGgplot2Limits(data: ForestPlotData[], config: PlotConfig): string | null {
+  if (config.xLimits !== 'auto') {
+    return `scale_x_continuous(limits = c(${config.xLimits[0]}, ${config.xLimits[1]}))`
+  }
+
+  // Auto limits with padding (÷1.3, ×1.3)
+  const allValues = data.flatMap(d => [d.ci_lower, d.effect, d.ci_upper])
+  const minVal = Math.min(...allValues)
+  const maxVal = Math.max(...allValues)
+  const xMin = minVal / 1.3
+  const xMax = maxVal * 1.3
+
+  return `scale_x_continuous(limits = c(${xMin.toFixed(4)}, ${xMax.toFixed(4)}))`
+}
+
+function getGgplot2Color(scheme: string): string {
+  switch (scheme) {
+    case 'monochrome': return 'black'
+    case 'colorblind': return '#0072B2'
+    case 'dark': return '#2E4057'
+    case 'light': return '#87CEEB'
+    default: return '#1E88E5'
+  }
+}
+
+function getDefaultXLabel(effectMeasure: string, axisType: string): string {
+  const measureLabel = effectMeasure === 'RR' ? 'Risk Ratio' :
+                       effectMeasure === 'OR' ? 'Odds Ratio' :
+                       effectMeasure === 'HR' ? 'Hazard Ratio' :
+                       effectMeasure === 'MD' ? 'Mean Difference' :
+                       effectMeasure === 'SMD' ? 'Standardized Mean Difference' :
+                       'Effect Size'
+
+  const scaleLabel = axisType !== 'linear' ? ' (log scale)' : ''
+  return `${measureLabel}${scaleLabel}`
 }
 
 export function validateData(data: ForestPlotData[]): { valid: boolean; errors: string[] } {
