@@ -33,6 +33,7 @@ export interface PlotConfig {
   pointSize: number
   colorScheme: string
   showValues: boolean
+  showGridLines: boolean
   referenceLineValue: number | null
   width: number | 'auto'
   height: number | 'auto'
@@ -59,7 +60,8 @@ export const defaultPlotConfig: PlotConfig = {
   pointSize: 3,
   colorScheme: 'default',
   showValues: true,
-  referenceLineValue: null,
+  showGridLines: false,
+  referenceLineValue: 1,
   width: 'auto',
   height: 'auto',
 }

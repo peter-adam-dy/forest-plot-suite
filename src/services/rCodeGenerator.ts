@@ -65,10 +65,18 @@ function buildGgplot2PlotCode(data: ForestPlotData[], config: PlotConfig): strin
   const pointColor = getGgplot2Color(config.colorScheme)
   const xlab = config.xLabel || 'Value'
 
-  // Reference line (only if specified)
-  const refLine = config.referenceLineValue !== null
+  // Check if reference line should be shown (not null and not undefined)
+  const hasReferenceLine = config.referenceLineValue !== null && config.referenceLineValue !== undefined
+
+  // Reference line: only show if explicitly set
+  const refLine = hasReferenceLine
     ? `geom_vline(xintercept = ${config.referenceLineValue}, linetype = "dashed", color = "grey50") +\n  `
     : ''
+
+  // Grid lines: show based on showGridLines setting (independent of reference line)
+  const gridLineStyle = (config.showGridLines ?? false)
+    ? 'element_line(linewidth = 0.3, colour = "grey80")'
+    : 'element_blank()'
 
   return `
 ${labelCode}
@@ -83,7 +91,7 @@ p <- ggplot(dat, aes(x = value, y = study)) +
   theme(
     panel.grid.major.y = element_blank(),
     panel.grid.minor = element_blank(),
-    panel.grid.major.x = element_line(linewidth = 0.3, colour = "grey80"),
+    panel.grid.major.x = ${gridLineStyle},
     plot.margin = margin(t = 5.5, r = 10, b = 20, l = 10),
     axis.title.x = element_text(margin = margin(t = 8)),
     axis.text.y = element_text(margin = margin(r = 5))

@@ -104,14 +104,14 @@
 
             <v-text-field
               v-model.number="config.referenceLineValue"
-              label="Reference Line Value (optional)"
+              label="Vertical Reference Line"
               type="number"
               step="0.1"
               variant="outlined"
               density="compact"
               class="mt-3"
               clearable
-              hint="Leave empty for no reference line"
+              hint="Dotted vertical line (default: 1). Click ✕ to hide"
               persistent-hint
               @update:model-value="updateConfig"
             ></v-text-field>
@@ -147,6 +147,13 @@
             <v-checkbox
               v-model="config.showValues"
               label="Show values and confidence intervals"
+              density="compact"
+              @update:model-value="updateConfig"
+            ></v-checkbox>
+
+            <v-checkbox
+              v-model="config.showGridLines"
+              label="Show vertical grid lines on x-axis"
               density="compact"
               @update:model-value="updateConfig"
             ></v-checkbox>
@@ -251,7 +258,7 @@
                 </tr>
                 <tr>
                   <td>Reference Line</td>
-                  <td>{{ config.referenceLineValue !== null ? config.referenceLineValue : 'None' }}</td>
+                  <td>{{ config.referenceLineValue !== null && config.referenceLineValue !== undefined ? `x = ${config.referenceLineValue}` : 'Hidden' }}</td>
                 </tr>
                 <tr>
                   <td>Point Size</td>
@@ -264,6 +271,10 @@
                 <tr>
                   <td>Show Values</td>
                   <td>{{ config.showValues ? 'Yes' : 'No' }}</td>
+                </tr>
+                <tr>
+                  <td>Show Grid Lines</td>
+                  <td>{{ config.showGridLines ? 'Yes' : 'No' }}</td>
                 </tr>
                 <tr>
                   <td>DPI</td>
@@ -298,7 +309,8 @@ const config = ref<PlotConfig>({
   pointSize: 3,
   colorScheme: 'default',
   showValues: true,
-  referenceLineValue: null,
+  showGridLines: false,
+  referenceLineValue: 1,
   width: 'auto',
   height: 'auto',
 })
@@ -345,7 +357,12 @@ const colorSchemeOptions = [
 // Watch active session and load its config
 watch(activeSession, (session) => {
   if (session) {
-    config.value = { ...session.config }
+    config.value = {
+      ...session.config,
+      // Set defaults for new fields ONLY if undefined (for old sessions), not if null (user cleared it)
+      referenceLineValue: session.config.referenceLineValue !== undefined ? session.config.referenceLineValue : 1,
+      showGridLines: session.config.showGridLines ?? false
+    }
 
     // Set limits mode based on config
     if (session.config.xLimits === 'auto') {
