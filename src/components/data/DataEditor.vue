@@ -61,7 +61,7 @@
             <draggable
               v-model="draggableData"
               tag="tbody"
-              :item-key="(item, index) => index"
+              :item-key="(_: unknown, index: number) => index"
               handle=".drag-handle"
               @change="handleDragChange"
             >

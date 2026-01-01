@@ -72,10 +72,6 @@
                           <td>{{ currentData.length }}</td>
                         </tr>
                         <tr>
-                          <td><strong>Effect Measure</strong></td>
-                          <td>{{ activeSession.config.effectMeasure }}</td>
-                        </tr>
-                        <tr>
                           <td><strong>Axis Scale</strong></td>
                           <td>{{ axisTypeLabel }}</td>
                         </tr>

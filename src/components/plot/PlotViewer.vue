@@ -110,10 +110,6 @@
                   <td>{{ currentData.length }}</td>
                 </tr>
                 <tr>
-                  <td><strong>Effect Measure</strong></td>
-                  <td>{{ activeSession.config.effectMeasure }}</td>
-                </tr>
-                <tr>
                   <td><strong>Axis Scale</strong></td>
                   <td>{{ axisTypeLabel }}</td>
                 </tr>
@@ -204,7 +200,7 @@ const dataStats = computed(() => {
     return { minEffect: 0, maxEffect: 0, meanEffect: 0, medianEffect: 0 }
   }
 
-  const effects = currentData.value.map(d => d.effect)
+  const effects = currentData.value.map(d => d.value)
   const sorted = [...effects].sort((a, b) => a - b)
 
   return {
