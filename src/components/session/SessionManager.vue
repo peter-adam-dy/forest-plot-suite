@@ -39,10 +39,10 @@
       density="compact"
       hide-details
       clearable
-      class="ma-2"
+      class="ma-2 flex-grow-0"
     ></v-text-field>
 
-    <v-list density="compact">
+    <v-list density="compact" class="session-list">
       <v-list-item
         v-for="session in filteredSessions"
         :key="session.id"
@@ -345,6 +345,12 @@ function showSnackbar(message: string, color: string = 'success') {
   height: 100%;
   display: flex;
   flex-direction: column;
+}
+
+.session-list {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .session-item {

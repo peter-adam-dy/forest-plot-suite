@@ -336,7 +336,7 @@ const config = ref<PlotConfig>({
   yLabel: 'Study',
   dpi: 300,
   pointSize: 3,
-  colorScheme: 'default',
+  colorScheme: 'monochrome',
   showValues: true,
   showGridLines: false,
   referenceLineValue: 1,
