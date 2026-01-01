@@ -25,6 +25,7 @@ export type DPI = 72 | 150 | 300 | 600
 export interface PlotConfig {
   axisType: AxisType
   xLimits: [number, number] | 'auto'
+  xBreaks: number[] | 'auto'
   title: string
   subtitle: string
   xLabel: string
@@ -52,6 +53,7 @@ export interface Session {
 export const defaultPlotConfig: PlotConfig = {
   axisType: 'linear',
   xLimits: 'auto',
+  xBreaks: 'auto',
   title: 'Forest Plot',
   subtitle: '',
   xLabel: 'Value',

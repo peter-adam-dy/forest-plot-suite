@@ -115,6 +115,30 @@
               persistent-hint
               @update:model-value="updateConfig"
             ></v-text-field>
+
+            <v-radio-group
+              v-model="breaksMode"
+              inline
+              density="compact"
+              class="mb-2 mt-4"
+              @update:model-value="handleBreaksModeChange"
+            >
+              <v-radio label="Auto Tick Positions" value="auto"></v-radio>
+              <v-radio label="Custom Tick Positions" value="manual"></v-radio>
+            </v-radio-group>
+
+            <v-textarea
+              v-if="breaksMode === 'manual'"
+              v-model="breaksInput"
+              label="Tick Positions"
+              variant="outlined"
+              density="compact"
+              rows="3"
+              placeholder="0.5, 1, 2, 5, 10"
+              hint="Enter numbers separated by commas or newlines"
+              persistent-hint
+              @update:model-value="updateCustomBreaks"
+            ></v-textarea>
           </v-card-text>
         </v-card>
       </v-col>
@@ -261,6 +285,10 @@
                   <td>{{ config.referenceLineValue !== null && config.referenceLineValue !== undefined ? `x = ${config.referenceLineValue}` : 'Hidden' }}</td>
                 </tr>
                 <tr>
+                  <td>X-Axis Tick Positions</td>
+                  <td>{{ config.xBreaks === 'auto' ? 'Auto' : config.xBreaks.join(', ') }}</td>
+                </tr>
+                <tr>
                   <td>Point Size</td>
                   <td>{{ config.pointSize }}</td>
                 </tr>
@@ -301,6 +329,7 @@ const activeSession = computed(() => sessionStore.activeSession)
 const config = ref<PlotConfig>({
   axisType: 'linear',
   xLimits: 'auto',
+  xBreaks: 'auto',
   title: 'Forest Plot',
   subtitle: '',
   xLabel: 'Value',
@@ -318,6 +347,10 @@ const config = ref<PlotConfig>({
 // Limits mode handling
 const limitsMode = ref<'auto' | 'manual'>('auto')
 const manualLimits = ref<[number, number]>([0, 1])
+
+// Breaks mode handling
+const breaksMode = ref<'auto' | 'manual'>('auto')
+const breaksInput = ref<string>('')
 
 // Dimensions mode handling
 const dimensionsMode = ref<'auto' | 'manual'>('auto')
@@ -361,7 +394,8 @@ watch(activeSession, (session) => {
       ...session.config,
       // Set defaults for new fields ONLY if undefined (for old sessions), not if null (user cleared it)
       referenceLineValue: session.config.referenceLineValue !== undefined ? session.config.referenceLineValue : 1,
-      showGridLines: session.config.showGridLines ?? false
+      showGridLines: session.config.showGridLines ?? false,
+      xBreaks: session.config.xBreaks ?? 'auto'
     }
 
     // Set limits mode based on config
@@ -370,6 +404,15 @@ watch(activeSession, (session) => {
     } else {
       limitsMode.value = 'manual'
       manualLimits.value = [...session.config.xLimits]
+    }
+
+    // Set breaks mode based on config
+    if (session.config.xBreaks === 'auto' || !session.config.xBreaks) {
+      breaksMode.value = 'auto'
+      breaksInput.value = ''
+    } else {
+      breaksMode.value = 'manual'
+      breaksInput.value = session.config.xBreaks.join(', ')
     }
 
     // Set dimensions mode based on config
@@ -403,6 +446,33 @@ function updateManualLimits() {
     config.value.xLimits = [manualLimits.value[0], manualLimits.value[1]]
     updateConfig()
   }
+}
+
+function handleBreaksModeChange(mode: 'auto' | 'manual' | null) {
+  if (!mode) return
+
+  if (mode === 'auto') {
+    config.value.xBreaks = 'auto'
+  } else {
+    updateCustomBreaks(breaksInput.value)
+  }
+  updateConfig()
+}
+
+function updateCustomBreaks(input: string) {
+  if (breaksMode.value !== 'manual') return
+
+  // Parse comma or newline separated numbers
+  const values = input
+    .split(/[,\n]/)
+    .map(s => s.trim())
+    .filter(s => s.length > 0)
+    .map(s => parseFloat(s))
+    .filter(n => !isNaN(n))
+    .sort((a, b) => a - b)  // Sort ascending
+
+  config.value.xBreaks = values.length > 0 ? values : 'auto'
+  updateConfig()
 }
 
 function handleDimensionsModeChange(mode: 'auto' | 'manual' | null) {

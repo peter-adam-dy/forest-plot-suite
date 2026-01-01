@@ -51,8 +51,7 @@ function buildGgplot2PlotCode(data: ForestPlotData[], config: PlotConfig): strin
     ? `ggtitle("${config.title}")`
     : ''
 
-  const scaleCode = buildGgplot2Scale(config)
-  const xlimCode = buildGgplot2Limits(data, config)
+  const scaleCode = buildGgplot2Scale(data, config)
 
   // Label code conditional on showValues
   const labelCode = config.showValues ? `
@@ -86,7 +85,7 @@ ${labelCode}
 p <- ggplot(dat, aes(x = value, y = study)) +
   ${refLine}geom_point(size = ${config.pointSize}, color = "${pointColor}") +
   geom_errorbar(aes(xmin = ci_lower, xmax = ci_upper), width = 0, linewidth = 0.7, color = "${pointColor}") +
-  ${scaleCode}${xlimCode ? `\n  ${xlimCode} +` : ''}
+  ${scaleCode}
   xlab("${xlab}") +
   ylab(NULL) +${labelGeom}
   coord_cartesian(clip = "off") +
@@ -104,29 +103,71 @@ print(p)
 `
 }
 
-function buildGgplot2Scale(config: PlotConfig): string {
-  switch (config.axisType) {
-    case 'linear': return 'scale_x_continuous() +'
-    case 'log2': return 'scale_x_continuous(trans = "log2") +'
-    case 'loge': return 'scale_x_continuous(trans = "log") +'
-    case 'log10': return 'scale_x_log10() +'
-    default: return 'scale_x_continuous() +'
-  }
-}
-
-function buildGgplot2Limits(data: ForestPlotData[], config: PlotConfig): string | null {
+function buildGgplot2Scale(data: ForestPlotData[], config: PlotConfig): string {
+  // Calculate limits
+  let limits: string | null = null
   if (config.xLimits !== 'auto') {
-    return `scale_x_continuous(limits = c(${config.xLimits[0]}, ${config.xLimits[1]}))`
+    limits = `c(${config.xLimits[0]}, ${config.xLimits[1]})`
+  } else {
+    // Auto limits with padding (÷1.3, ×1.3)
+    const allValues = data.flatMap(d => [d.ci_lower, d.value, d.ci_upper])
+    const minVal = Math.min(...allValues)
+    const maxVal = Math.max(...allValues)
+    const xMin = minVal / 1.3
+    const xMax = maxVal * 1.3
+    limits = `c(${xMin.toFixed(4)}, ${xMax.toFixed(4)})`
   }
 
-  // Auto limits with padding (÷1.3, ×1.3)
-  const allValues = data.flatMap(d => [d.ci_lower, d.value, d.ci_upper])
-  const minVal = Math.min(...allValues)
-  const maxVal = Math.max(...allValues)
-  const xMin = minVal / 1.3
-  const xMax = maxVal * 1.3
+  // Calculate breaks
+  let breaks: string | null = null
+  if (config.xBreaks !== 'auto' && Array.isArray(config.xBreaks) && config.xBreaks.length > 0) {
+    breaks = `c(${config.xBreaks.join(', ')})`
+  }
 
-  return `scale_x_continuous(limits = c(${xMin.toFixed(4)}, ${xMax.toFixed(4)}))`
+  // Build scale call with all parameters
+  const params: string[] = []
+
+  // Add transformation based on axis type
+  switch (config.axisType) {
+    case 'log2':
+      params.push('trans = "log2"')
+      break
+    case 'loge':
+      params.push('trans = "log"')
+      break
+    case 'log10':
+      // For log10, we'll use scale_x_log10() which is more idiomatic
+      break
+    // linear has no trans parameter
+  }
+
+  // Add limits
+  if (limits) {
+    params.push(`limits = ${limits}`)
+  }
+
+  // Add breaks
+  if (breaks) {
+    params.push(`breaks = ${breaks}`)
+  }
+
+  // Generate the scale function call
+  if (config.axisType === 'log10') {
+    // Use scale_x_log10() for log10
+    const nonTransParams = params.filter(p => !p.startsWith('trans'))
+    if (nonTransParams.length > 0) {
+      return `scale_x_log10(${nonTransParams.join(', ')}) +`
+    } else {
+      return 'scale_x_log10() +'
+    }
+  } else {
+    // Use scale_x_continuous() for all others
+    if (params.length > 0) {
+      return `scale_x_continuous(${params.join(', ')}) +`
+    } else {
+      return 'scale_x_continuous() +'
+    }
+  }
 }
 
 function getGgplot2Color(scheme: string): string {
