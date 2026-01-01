@@ -1,0 +1,17 @@
+{
+  "name": "Forest Plot Generator",
+  "short_name": "Forest Plot",
+  "description": "Create and customize forest plots with an interactive web-based tool",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1976d2",
+  "icons": [
+    {
+      "src": "/forest-plot-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
