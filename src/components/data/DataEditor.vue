@@ -50,7 +50,7 @@
             <thead>
               <tr>
                 <th style="width: 50px;"></th>
-                <th style="min-width: 200px;">Study</th>
+                <th style="min-width: 200px;">Outcome</th>
                 <th style="width: 120px;">Value</th>
                 <th style="width: 120px;">Lower CI</th>
                 <th style="width: 120px;">Upper CI</th>
@@ -72,7 +72,7 @@
                   </td>
                   <td>
                     <v-text-field
-                      v-model="element.study"
+                      v-model="element.outcome"
                       density="compact"
                       variant="outlined"
                       hide-details
@@ -318,7 +318,7 @@ watchDebounced(
 
 function addRow() {
   localData.value.push({
-    study: '',
+    outcome: '',
     value: 0,
     ci_lower: 0,
     ci_upper: 0,

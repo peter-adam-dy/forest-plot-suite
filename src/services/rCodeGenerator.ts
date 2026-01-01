@@ -24,14 +24,14 @@ ${plotCode}
 }
 
 function buildGgplot2DataFrame(data: ForestPlotData[]): string {
-  const studies = data.map(d => `"${d.study.replace(/"/g, '\\"')}"`).join(', ')
+  const outcomes = data.map(d => `"${d.outcome.replace(/"/g, '\\"')}"`).join(', ')
   const values = data.map(d => d.value).join(', ')
   const ciLowers = data.map(d => d.ci_lower).join(', ')
   const ciUppers = data.map(d => d.ci_upper).join(', ')
 
   return `
 dat <- data.frame(
-  study = c(${studies}),
+  outcome = c(${outcomes}),
   value = c(${values}),
   ci_lower = c(${ciLowers}),
   ci_upper = c(${ciUppers}),
@@ -39,7 +39,7 @@ dat <- data.frame(
 )
 
 # Reverse order for top-to-bottom display
-dat$study <- factor(dat$study, levels = rev(dat$study))
+dat$outcome <- factor(dat$outcome, levels = rev(dat$outcome))
 `
 }
 
@@ -82,7 +82,7 @@ function buildGgplot2PlotCode(data: ForestPlotData[], config: PlotConfig): strin
 
   return `
 ${labelCode}
-p <- ggplot(dat, aes(x = value, y = study)) +
+p <- ggplot(dat, aes(x = value, y = outcome)) +
   ${refLine}geom_point(size = ${config.pointSize}, color = "${pointColor}") +
   geom_errorbar(aes(xmin = ci_lower, xmax = ci_upper), width = 0, linewidth = 0.7, color = "${pointColor}") +
   ${scaleCode}
@@ -189,8 +189,8 @@ export function validateData(data: ForestPlotData[]): { valid: boolean; errors: 
   }
 
   data.forEach((row, idx) => {
-    if (!row.study || row.study.trim() === '') {
-      errors.push(`Row ${idx + 1}: Study name is required`)
+    if (!row.outcome || row.outcome.trim() === '') {
+      errors.push(`Row ${idx + 1}: Outcome name is required`)
     }
     if (isNaN(row.value)) {
       errors.push(`Row ${idx + 1}: Value must be a valid number`)

@@ -235,7 +235,7 @@
               density="compact"
               class="mt-2"
             >
-              Dimensions calculated from study count
+              Dimensions calculated from outcome count
             </v-alert>
           </v-card-text>
         </v-card>
@@ -319,7 +319,7 @@ const config = ref<PlotConfig>({
   title: 'Forest Plot',
   subtitle: '',
   xLabel: 'Value',
-  yLabel: 'Study',
+  yLabel: 'Outcome',
   dpi: 300,
   pointSize: 3,
   colorScheme: 'monochrome',

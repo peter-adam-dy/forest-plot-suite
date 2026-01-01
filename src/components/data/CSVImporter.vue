@@ -42,9 +42,9 @@
           <v-row>
             <v-col cols="6">
               <v-select
-                v-model="columnMapping.study"
+                v-model="columnMapping.outcome"
                 :items="availableColumns"
-                label="Study Column *"
+                label="Outcome Column *"
                 variant="outlined"
                 density="compact"
                 @update:model-value="updatePreview"
@@ -129,7 +129,7 @@
           <v-table density="compact" class="elevation-1">
             <thead>
               <tr>
-                <th>Study</th>
+                <th>Outcome</th>
                 <th>Value</th>
                 <th>Lower CI</th>
                 <th>Upper CI</th>
@@ -138,7 +138,7 @@
             </thead>
             <tbody>
               <tr v-for="(row, idx) in parseResult.data.slice(0, 5)" :key="idx">
-                <td>{{ row.study }}</td>
+                <td>{{ row.outcome }}</td>
                 <td>{{ row.value }}</td>
                 <td>{{ row.ci_lower }}</td>
                 <td>{{ row.ci_upper }}</td>
@@ -222,7 +222,7 @@ const rawData = ref<any[]>([])
 const hasHeader = ref(true)
 const availableColumns = ref<{ title: string; value: string }[]>([])
 const columnMapping = ref({
-  study: null as string | null,
+  outcome: null as string | null,
   value: null as string | null,
   ci_lower: null as string | null,
   ci_upper: null as string | null,
@@ -323,12 +323,12 @@ function parseCSVRaw(csvText: string) {
 function autoMapColumns() {
   const columns = availableColumns.value.map(c => c.value.toLowerCase())
 
-  // Auto-map study
-  const studyIdx = columns.findIndex(c =>
-    c.includes('study') || c.includes('name') || c.includes('trial')
+  // Auto-map outcome
+  const outcomeIdx = columns.findIndex(c =>
+    c.includes('outcome') || c.includes('study') || c.includes('name') || c.includes('trial')
   )
-  if (studyIdx !== -1 && availableColumns.value[studyIdx]) {
-    columnMapping.value.study = availableColumns.value[studyIdx].value
+  if (outcomeIdx !== -1 && availableColumns.value[outcomeIdx]) {
+    columnMapping.value.outcome = availableColumns.value[outcomeIdx].value
   }
 
   // Auto-map value
@@ -364,7 +364,7 @@ function autoMapColumns() {
   }
 
   // Trigger preview if we have required fields
-  if (columnMapping.value.study && columnMapping.value.value &&
+  if (columnMapping.value.outcome && columnMapping.value.value &&
       columnMapping.value.ci_lower && columnMapping.value.ci_upper) {
     updatePreview()
   }
@@ -382,7 +382,7 @@ function handleDelimiterChange() {
 }
 
 function updatePreview() {
-  if (!columnMapping.value.study || !columnMapping.value.value ||
+  if (!columnMapping.value.outcome || !columnMapping.value.value ||
       !columnMapping.value.ci_lower || !columnMapping.value.ci_upper) {
     parseResult.value = null
     return
@@ -394,7 +394,7 @@ function updatePreview() {
 
   rawData.value.forEach((row, idx) => {
     const rowData = {
-      study: row[columnMapping.value.study!],
+      outcome: row[columnMapping.value.outcome!],
       value: row[columnMapping.value.value!],
       ci_lower: row[columnMapping.value.ci_lower!],
       ci_upper: row[columnMapping.value.ci_upper!],
@@ -402,8 +402,8 @@ function updatePreview() {
     }
 
     // Validate
-    if (!rowData.study || String(rowData.study).trim() === '') {
-      errors.push(`Row ${idx + 1}: Study name is required`)
+    if (!rowData.outcome || String(rowData.outcome).trim() === '') {
+      errors.push(`Row ${idx + 1}: Outcome name is required`)
       return
     }
 
@@ -429,7 +429,7 @@ function updatePreview() {
     }
 
     data.push({
-      study: String(rowData.study),
+      outcome: String(rowData.outcome),
       value,
       ci_lower: ciLower,
       ci_upper: ciUpper,
@@ -458,7 +458,7 @@ function reset() {
   rawData.value = []
   availableColumns.value = []
   columnMapping.value = {
-    study: null,
+    outcome: null,
     value: null,
     ci_lower: null,
     ci_upper: null,

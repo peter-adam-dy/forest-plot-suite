@@ -6,13 +6,13 @@ export interface PlotDimensions {
 }
 
 /**
- * Calculate optimal plot dimensions based on study count
- * @param studyCount Number of studies in the dataset
+ * Calculate optimal plot dimensions based on outcome count
+ * @param outcomeCount Number of outcomes in the dataset
  * @param config Plot configuration
  * @returns Dimensions in inches
  */
 export function calculatePlotDimensions(
-  studyCount: number,
+  outcomeCount: number,
   config: PlotConfig
 ): PlotDimensions {
   // If manual dimensions are set, use them
@@ -25,7 +25,7 @@ export function calculatePlotDimensions(
 
   // Calculate auto dimensions
   const width = config.width !== 'auto' ? config.width : getAutoWidth()
-  const height = config.height !== 'auto' ? config.height : getAutoHeight(studyCount, config.showValues)
+  const height = config.height !== 'auto' ? config.height : getAutoHeight(outcomeCount, config.showValues)
 
   return { width, height }
 }
@@ -34,13 +34,13 @@ function getAutoWidth(): number {
   return 10  // Standard width for ggplot2 layout
 }
 
-function getAutoHeight(studyCount: number, showValues: boolean): number {
-  // ggplot2: ~0.5 inches per study
+function getAutoHeight(outcomeCount: number, showValues: boolean): number {
+  // ggplot2: ~0.5 inches per outcome
   // Base: 2.5 inches for title, axis labels, margins
   // Additional 1 inch when showing values to accommodate labels below bottom point
   const baseHeight = 2.5 + (showValues ? 1 : 0)
-  const heightPerStudy = 0.5
-  const calculatedHeight = baseHeight + studyCount * heightPerStudy
+  const heightPerOutcome = 0.5
+  const calculatedHeight = baseHeight + outcomeCount * heightPerOutcome
 
   // Constrain between reasonable bounds
   return Math.max(4, Math.min(20, calculatedHeight))

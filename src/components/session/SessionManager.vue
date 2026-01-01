@@ -2,64 +2,75 @@
   <div class="session-grid">
     <!-- Search Bar and Actions -->
     <div class="search-actions mb-6">
-      <v-text-field
-        v-model="searchQuery"
-        placeholder="Search sessions..."
-        prepend-inner-icon="mdi-magnify"
-        variant="outlined"
-        density="comfortable"
-        hide-details
-        clearable
-      ></v-text-field>
+      <div class="d-flex align-center">
+        <v-text-field
+          v-model="searchQuery"
+          placeholder="Search sessions..."
+          prepend-inner-icon="mdi-magnify"
+          variant="outlined"
+          density="comfortable"
+          hide-details
+          clearable
+          style="max-width: 20rem;"
+        ></v-text-field>
 
-      <div class="actions-menu mt-3">
+        <v-spacer></v-spacer>
+
         <v-btn
-          variant="outlined"
-          prepend-icon="mdi-export"
-          @click="exportAll"
+          color="primary"
+          prepend-icon="mdi-plus"
+          @click="createNewSession"
+          style="margin-right: 8px;"
         >
-          Export All
+          New Session
         </v-btn>
-        <v-btn
-          variant="outlined"
-          prepend-icon="mdi-import"
-          @click="importDialog = true"
-          class="ml-2"
-        >
-          Import
-        </v-btn>
+
+        <v-menu>
+          <template v-slot:activator="{ props }">
+            <v-btn
+              icon="mdi-dots-vertical"
+              variant="text"
+              v-bind="props"
+            ></v-btn>
+          </template>
+          <v-list>
+            <v-list-item @click="exportAll">
+              <v-list-item-title>
+                <v-icon start size="small">mdi-export</v-icon>
+                Export All Sessions
+              </v-list-item-title>
+            </v-list-item>
+            <v-list-item @click="importDialog = true">
+              <v-list-item-title>
+                <v-icon start size="small">mdi-import</v-icon>
+                Import Sessions
+              </v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-menu>
       </div>
     </div>
 
-    <!-- Session Cards Grid -->
-    <v-row>
-      <v-col
-        v-for="session in filteredSessions"
-        :key="session.id"
-        cols="12"
-        sm="6"
-        md="4"
-        lg="3"
-      >
-        <v-card
-          class="session-card"
-          hover
+    <!-- Session List -->
+    <v-list border class="session-list">
+      <template v-for="(session, index) in filteredSessions" :key="session.id">
+        <v-list-item
           @click="handleSessionClick(session.id)"
+          class="session-list-item"
         >
-          <v-card-title class="text-h6">{{ session.name }}</v-card-title>
-          <v-card-subtitle>
-            Modified {{ formatDate(session.modified) }}
-          </v-card-subtitle>
-          <v-card-text>
-            <v-icon size="small" class="mr-1">mdi-chart-line</v-icon>
-            {{ session.dataVersions[0]?.data.length || 0 }} data points
-          </v-card-text>
+          <template v-slot:prepend>
+            <v-icon>mdi-chart-box-outline</v-icon>
+          </template>
 
-          <v-card-actions>
-            <v-spacer></v-spacer>
+          <v-list-item-title>{{ session.name }}</v-list-item-title>
+          <v-list-item-subtitle>
+            Modified {{ formatDate(session.modified) }} • {{ session.dataVersions[0]?.data.length || 0 }} data points
+          </v-list-item-subtitle>
+
+          <template v-slot:append>
             <v-menu>
               <template v-slot:activator="{ props }">
-                <v-btn icon size="small" v-bind="props" @click.stop>
+                <v-btn icon size="small" variant="text" v-bind="props" @click.stop>
                   <v-icon>mdi-dots-vertical</v-icon>
                 </v-btn>
               </template>
@@ -84,24 +95,12 @@
                 </v-list-item>
               </v-list>
             </v-menu>
-          </v-card-actions>
-        </v-card>
-      </v-col>
+          </template>
+        </v-list-item>
 
-      <!-- Create New Session Card -->
-      <v-col cols="12" sm="6" md="4" lg="3">
-        <v-card
-          class="session-card session-card-new"
-          hover
-          @click="createNewSession"
-        >
-          <div class="d-flex flex-column align-center justify-center" style="height: 100%">
-            <v-icon size="48" color="primary">mdi-plus</v-icon>
-            <p class="text-h6 mt-2">Create New Session</p>
-          </div>
-        </v-card>
-      </v-col>
-    </v-row>
+        <v-divider v-if="index < filteredSessions.length - 1"></v-divider>
+      </template>
+    </v-list>
 
     <!-- Empty State -->
     <div v-if="filteredSessions.length === 0 && searchQuery" class="text-center pa-8">
@@ -166,6 +165,27 @@
       </v-card>
     </v-dialog>
 
+    <!-- New Session Dialog -->
+    <v-dialog v-model="newSessionDialog" max-width="400">
+      <v-card>
+        <v-card-title>Create New Session</v-card-title>
+        <v-card-text>
+          <v-text-field
+            v-model="newSessionNameInput"
+            label="Session Name"
+            variant="outlined"
+            autofocus
+            @keyup.enter="confirmCreateSession"
+          ></v-text-field>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn @click="newSessionDialog = false">Cancel</v-btn>
+          <v-btn color="primary" @click="confirmCreateSession" :disabled="!newSessionNameInput.trim()">Create</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- Snackbar for notifications -->
     <v-snackbar v-model="snackbar" :color="snackbarColor" timeout="3000">
       {{ snackbarMessage }}
@@ -188,7 +208,9 @@ const searchQuery = ref('')
 const renameDialog = ref(false)
 const deleteDialog = ref(false)
 const importDialog = ref(false)
+const newSessionDialog = ref(false)
 const newSessionName = ref('')
+const newSessionNameInput = ref('')
 const sessionToRename = ref<Session | null>(null)
 const sessionToDelete = ref<Session | null>(null)
 const importFile = ref<File[] | null>(null)
@@ -226,9 +248,20 @@ function formatDate(date: Date): string {
   }
 }
 
-async function createNewSession() {
+function createNewSession() {
+  newSessionNameInput.value = `Session ${sessionStore.sessions.length + 1}`
+  newSessionDialog.value = true
+}
+
+async function confirmCreateSession() {
+  if (!newSessionNameInput.value.trim()) {
+    return
+  }
+
   try {
-    const session = await sessionStore.createSession(`Session ${sessionStore.sessions.length + 1}`)
+    const session = await sessionStore.createSession(newSessionNameInput.value.trim())
+    newSessionDialog.value = false
+    newSessionNameInput.value = ''
     showSnackbar('Session created successfully', 'success')
     // Emit event to navigate to new session
     emit('sessionSelected', session.id)
@@ -349,38 +382,21 @@ function showSnackbar(message: string, color: string = 'success') {
 .session-grid {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 24px;
 }
 
 .search-actions {
-  max-width: 600px;
+  width: 100%;
+  margin-bottom: 24px;
 }
 
-.actions-menu {
-  display: flex;
-  gap: 8px;
-}
-
-.session-card {
-  height: 180px;
+.session-list-item {
   cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  flex-direction: column;
+  transition: background-color 0.2s;
+  padding-top: 16px !important;
+  padding-bottom: 16px !important;
 }
 
-.session-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-}
-
-.session-card-new {
-  border: 2px dashed rgba(var(--v-theme-primary), 0.3);
-  background: rgba(var(--v-theme-primary), 0.02);
-}
-
-.session-card-new:hover {
-  background: rgba(var(--v-theme-primary), 0.05);
-  border-color: rgba(var(--v-theme-primary), 0.5);
+.session-list-item:hover {
+  background-color: rgba(var(--v-theme-primary), 0.05);
 }
 </style>

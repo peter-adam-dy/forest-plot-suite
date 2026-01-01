@@ -1,5 +1,5 @@
 export interface ForestPlotData {
-  study: string
+  outcome: string
   value: number
   ci_lower: number
   ci_upper: number
@@ -57,7 +57,7 @@ export const defaultPlotConfig: PlotConfig = {
   title: 'Forest Plot',
   subtitle: '',
   xLabel: 'Value',
-  yLabel: 'Study',
+  yLabel: 'Outcome',
   dpi: 300,
   pointSize: 3,
   colorScheme: 'monochrome',

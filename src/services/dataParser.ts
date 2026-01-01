@@ -21,8 +21,8 @@ export function validateRow(row: any, index: number): ValidationResult {
   const warnings: string[] = []
 
   // Check required fields
-  if (!row.study || String(row.study).trim() === '') {
-    errors.push(`Row ${index + 1}: Study name is required`)
+  if (!row.outcome || String(row.outcome).trim() === '') {
+    errors.push(`Row ${index + 1}: Outcome name is required`)
   }
 
   if (row.value === undefined || row.value === null || row.value === '') {
@@ -89,13 +89,13 @@ export function parseCSV(csvText: string): ParsedData {
     const header = headerLine.split(',').map(h => h.trim().toLowerCase())
 
     // Find column indices
-    const studyIdx = header.findIndex(h => h === 'study')
+    const outcomeIdx = header.findIndex(h => h === 'outcome' || h === 'study')
     const valueIdx = header.findIndex(h => h === 'value' || h === 'effect')
     const ciLowerIdx = header.findIndex(h => h === 'ci_lower' || h === 'lower' || h === 'cilower')
     const ciUpperIdx = header.findIndex(h => h === 'ci_upper' || h === 'upper' || h === 'ciupper')
     const weightIdx = header.findIndex(h => h === 'weight')
 
-    if (studyIdx === -1) errors.push('Missing "study" column')
+    if (outcomeIdx === -1) errors.push('Missing "outcome" or "study" column')
     if (valueIdx === -1) errors.push('Missing "value" or "effect" column')
     if (ciLowerIdx === -1) errors.push('Missing "ci_lower" or "lower" column')
     if (ciUpperIdx === -1) errors.push('Missing "ci_upper" or "upper" column')
@@ -111,7 +111,7 @@ export function parseCSV(csvText: string): ParsedData {
       const values = line.split(',').map(v => v.trim())
 
       const row = {
-        study: values[studyIdx],
+        outcome: values[outcomeIdx],
         value: values[valueIdx],
         ci_lower: values[ciLowerIdx],
         ci_upper: values[ciUpperIdx],
@@ -124,7 +124,7 @@ export function parseCSV(csvText: string): ParsedData {
 
       if (validation.isValid) {
         data.push({
-          study: String(row.study),
+          outcome: String(row.outcome),
           value: Number(row.value),
           ci_lower: Number(row.ci_lower),
           ci_upper: Number(row.ci_upper),
@@ -198,7 +198,7 @@ export function parseExcel(
 
       // Map columns
       const row = {
-        study: normalizedRow.study || normalizedRow['study_name'] || normalizedRow.name,
+        outcome: normalizedRow.outcome || normalizedRow.study || normalizedRow['study_name'] || normalizedRow.name,
         value: normalizedRow.value || normalizedRow.effect || normalizedRow.effect_size || normalizedRow.es,
         ci_lower: normalizedRow.ci_lower || normalizedRow.lower || normalizedRow.cilower || normalizedRow.lower_ci,
         ci_upper: normalizedRow.ci_upper || normalizedRow.upper || normalizedRow.ciupper || normalizedRow.upper_ci,
@@ -211,7 +211,7 @@ export function parseExcel(
 
       if (validation.isValid) {
         data.push({
-          study: String(row.study),
+          outcome: String(row.outcome),
           value: Number(row.value),
           ci_lower: Number(row.ci_lower),
           ci_upper: Number(row.ci_upper),
