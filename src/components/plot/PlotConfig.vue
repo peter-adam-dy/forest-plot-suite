@@ -1,17 +1,12 @@
 <template>
   <v-container fluid>
-    <v-row v-if="!activeSession">
-      <v-col>
-        <v-alert type="info" variant="tonal">
-          Please create or select a session to configure plot settings.
-        </v-alert>
-      </v-col>
-    </v-row>
+    <v-alert v-if="!activeSession" type="info" variant="tonal" class="mb-4">
+      Please create or select a session to configure plot settings.
+    </v-alert>
 
-    <v-row v-else>
-      <v-col cols="12" md="6">
-        <v-card>
-          <v-card-title>Plot Content</v-card-title>
+    <div v-else>
+      <v-card class="mb-4">
+        <v-card-title>Plot Content</v-card-title>
           <v-card-text>
             <v-text-field
               v-model="config.title"
@@ -50,11 +45,9 @@
             ></v-text-field>
           </v-card-text>
         </v-card>
-      </v-col>
 
-      <v-col cols="12" md="6">
-        <v-card>
-          <v-card-title>Axis Settings</v-card-title>
+      <v-card class="mb-4">
+        <v-card-title>Axis Settings</v-card-title>
           <v-card-text>
             <v-select
               v-model="config.axisType"
@@ -141,11 +134,9 @@
             ></v-textarea>
           </v-card-text>
         </v-card>
-      </v-col>
 
-      <v-col cols="12" md="6">
-        <v-card>
-          <v-card-title>Visual Style</v-card-title>
+      <v-card class="mb-4">
+        <v-card-title>Visual Style</v-card-title>
           <v-card-text>
             <v-slider
               v-model="config.pointSize"
@@ -183,11 +174,9 @@
             ></v-checkbox>
           </v-card-text>
         </v-card>
-      </v-col>
 
-      <v-col cols="12" md="6">
-        <v-card>
-          <v-card-title>Export Settings</v-card-title>
+      <v-card class="mb-4">
+        <v-card-title>Export Settings</v-card-title>
           <v-card-text>
             <v-select
               v-model="config.dpi"
@@ -250,11 +239,9 @@
             </v-alert>
           </v-card-text>
         </v-card>
-      </v-col>
 
-      <v-col cols="12">
-        <v-card>
-          <v-card-title>Preview Settings</v-card-title>
+      <v-card>
+        <v-card-title>Preview Settings</v-card-title>
           <v-card-text>
             <v-table density="compact">
               <thead>
@@ -312,8 +299,7 @@
             </v-table>
           </v-card-text>
         </v-card>
-      </v-col>
-    </v-row>
+    </div>
   </v-container>
 </template>
 

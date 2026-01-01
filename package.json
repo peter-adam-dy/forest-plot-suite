@@ -13,6 +13,7 @@
     "@vueuse/core": "^14.1.0",
     "idb": "^8.0.3",
     "pinia": "^3.0.4",
+    "splitpanes": "^4.0.4",
     "vue": "^3.5.24",
     "vuedraggable": "^4.1.0",
     "vuetify": "^3.11.5",

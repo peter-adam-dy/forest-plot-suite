@@ -1,107 +1,113 @@
 <template>
-  <div class="session-manager">
-    <v-toolbar density="compact" color="transparent">
-      <v-toolbar-title class="text-subtitle-1">Sessions</v-toolbar-title>
-      <v-spacer></v-spacer>
-      <v-btn icon size="small" @click="createNewSession">
-        <v-icon>mdi-plus</v-icon>
-      </v-btn>
-      <v-menu>
-        <template v-slot:activator="{ props }">
-          <v-btn icon size="small" v-bind="props">
-            <v-icon>mdi-dots-vertical</v-icon>
-          </v-btn>
-        </template>
-        <v-list>
-          <v-list-item @click="exportAll">
-            <v-list-item-title>
-              <v-icon start size="small">mdi-export</v-icon>
-              Export All Sessions
-            </v-list-item-title>
-          </v-list-item>
-          <v-list-item @click="importDialog = true">
-            <v-list-item-title>
-              <v-icon start size="small">mdi-import</v-icon>
-              Import Session
-            </v-list-item-title>
-          </v-list-item>
-        </v-list>
-      </v-menu>
-    </v-toolbar>
+  <div class="session-grid">
+    <!-- Search Bar and Actions -->
+    <div class="search-actions mb-6">
+      <v-text-field
+        v-model="searchQuery"
+        placeholder="Search sessions..."
+        prepend-inner-icon="mdi-magnify"
+        variant="outlined"
+        density="comfortable"
+        hide-details
+        clearable
+      ></v-text-field>
 
-    <v-divider></v-divider>
+      <div class="actions-menu mt-3">
+        <v-btn
+          variant="outlined"
+          prepend-icon="mdi-export"
+          @click="exportAll"
+        >
+          Export All
+        </v-btn>
+        <v-btn
+          variant="outlined"
+          prepend-icon="mdi-import"
+          @click="importDialog = true"
+          class="ml-2"
+        >
+          Import
+        </v-btn>
+      </div>
+    </div>
 
-    <v-text-field
-      v-model="searchQuery"
-      placeholder="Search sessions..."
-      prepend-inner-icon="mdi-magnify"
-      variant="outlined"
-      density="compact"
-      hide-details
-      clearable
-      class="ma-2 flex-grow-0"
-    ></v-text-field>
-
-    <v-list density="compact" class="session-list">
-      <v-list-item
+    <!-- Session Cards Grid -->
+    <v-row>
+      <v-col
         v-for="session in filteredSessions"
         :key="session.id"
-        :active="session.id === activeSessionId"
-        @click="selectSession(session.id)"
-        class="session-item"
+        cols="12"
+        sm="6"
+        md="4"
+        lg="3"
       >
-        <template v-slot:prepend>
-          <v-icon>mdi-chart-box-outline</v-icon>
-        </template>
+        <v-card
+          class="session-card"
+          hover
+          @click="handleSessionClick(session.id)"
+        >
+          <v-card-title class="text-h6">{{ session.name }}</v-card-title>
+          <v-card-subtitle>
+            Modified {{ formatDate(session.modified) }}
+          </v-card-subtitle>
+          <v-card-text>
+            <v-icon size="small" class="mr-1">mdi-chart-line</v-icon>
+            {{ session.dataVersions[0]?.data.length || 0 }} data points
+          </v-card-text>
 
-        <v-list-item-title>{{ session.name }}</v-list-item-title>
-        <v-list-item-subtitle>
-          {{ formatDate(session.modified) }}
-        </v-list-item-subtitle>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-menu>
+              <template v-slot:activator="{ props }">
+                <v-btn icon size="small" v-bind="props" @click.stop>
+                  <v-icon>mdi-dots-vertical</v-icon>
+                </v-btn>
+              </template>
+              <v-list>
+                <v-list-item @click="renameSessionDialog(session)">
+                  <v-list-item-title>
+                    <v-icon start size="small">mdi-pencil</v-icon>
+                    Rename
+                  </v-list-item-title>
+                </v-list-item>
+                <v-list-item @click="exportSession(session)">
+                  <v-list-item-title>
+                    <v-icon start size="small">mdi-export</v-icon>
+                    Export
+                  </v-list-item-title>
+                </v-list-item>
+                <v-list-item @click="confirmDelete(session)">
+                  <v-list-item-title class="text-error">
+                    <v-icon start size="small">mdi-delete</v-icon>
+                    Delete
+                  </v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-menu>
+          </v-card-actions>
+        </v-card>
+      </v-col>
 
-        <template v-slot:append>
-          <v-menu>
-            <template v-slot:activator="{ props }">
-              <v-btn
-                icon
-                size="x-small"
-                variant="text"
-                v-bind="props"
-                @click.stop
-              >
-                <v-icon>mdi-dots-vertical</v-icon>
-              </v-btn>
-            </template>
-            <v-list>
-              <v-list-item @click="renameSessionDialog(session)">
-                <v-list-item-title>
-                  <v-icon start size="small">mdi-pencil</v-icon>
-                  Rename
-                </v-list-item-title>
-              </v-list-item>
-              <v-list-item @click="exportSession(session)">
-                <v-list-item-title>
-                  <v-icon start size="small">mdi-export</v-icon>
-                  Export
-                </v-list-item-title>
-              </v-list-item>
-              <v-list-item @click="confirmDelete(session)">
-                <v-list-item-title class="text-error">
-                  <v-icon start size="small">mdi-delete</v-icon>
-                  Delete
-                </v-list-item-title>
-              </v-list-item>
-            </v-list>
-          </v-menu>
-        </template>
-      </v-list-item>
+      <!-- Create New Session Card -->
+      <v-col cols="12" sm="6" md="4" lg="3">
+        <v-card
+          class="session-card session-card-new"
+          hover
+          @click="createNewSession"
+        >
+          <div class="d-flex flex-column align-center justify-center" style="height: 100%">
+            <v-icon size="48" color="primary">mdi-plus</v-icon>
+            <p class="text-h6 mt-2">Create New Session</p>
+          </div>
+        </v-card>
+      </v-col>
+    </v-row>
 
-      <v-list-item v-if="filteredSessions.length === 0" class="text-center">
-        <v-list-item-title class="text-grey">
-          No sessions found
-        </v-list-item-title>
-      </v-list-item>
-    </v-list>
+    <!-- Empty State -->
+    <div v-if="filteredSessions.length === 0 && searchQuery" class="text-center pa-8">
+      <v-icon size="64" color="grey-lighten-1">mdi-magnify</v-icon>
+      <p class="text-body-1 text-grey mt-4">No sessions found</p>
+    </div>
 
     <!-- Rename Dialog -->
     <v-dialog v-model="renameDialog" max-width="400">
@@ -174,6 +180,10 @@ import type { Session } from '@/types'
 
 const sessionStore = useSessionStore()
 
+const emit = defineEmits<{
+  sessionSelected: [sessionId: string]
+}>()
+
 const searchQuery = ref('')
 const renameDialog = ref(false)
 const deleteDialog = ref(false)
@@ -185,8 +195,6 @@ const importFile = ref<File[] | null>(null)
 const snackbar = ref(false)
 const snackbarMessage = ref('')
 const snackbarColor = ref('success')
-
-const activeSessionId = computed(() => sessionStore.activeSessionId)
 
 const filteredSessions = computed(() => {
   if (!searchQuery.value) {
@@ -220,21 +228,18 @@ function formatDate(date: Date): string {
 
 async function createNewSession() {
   try {
-    await sessionStore.createSession(`Session ${sessionStore.sessions.length + 1}`)
+    const session = await sessionStore.createSession(`Session ${sessionStore.sessions.length + 1}`)
     showSnackbar('Session created successfully', 'success')
+    // Emit event to navigate to new session
+    emit('sessionSelected', session.id)
   } catch (error) {
     console.error('Failed to create session:', error)
     showSnackbar('Failed to create session', 'error')
   }
 }
 
-async function selectSession(id: string) {
-  try {
-    await sessionStore.setActiveSession(id)
-  } catch (error) {
-    console.error('Failed to select session:', error)
-    showSnackbar('Failed to select session', 'error')
-  }
+function handleSessionClick(sessionId: string) {
+  emit('sessionSelected', sessionId)
 }
 
 function renameSessionDialog(session: Session) {
@@ -341,19 +346,41 @@ function showSnackbar(message: string, color: string = 'success') {
 </script>
 
 <style scoped>
-.session-manager {
-  height: 100%;
+.session-grid {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.search-actions {
+  max-width: 600px;
+}
+
+.actions-menu {
+  display: flex;
+  gap: 8px;
+}
+
+.session-card {
+  height: 180px;
+  cursor: pointer;
+  transition: all 0.2s;
   display: flex;
   flex-direction: column;
 }
 
-.session-list {
-  flex: 1;
-  overflow-y: auto;
-  min-height: 0;
+.session-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
 }
 
-.session-item {
-  cursor: pointer;
+.session-card-new {
+  border: 2px dashed rgba(var(--v-theme-primary), 0.3);
+  background: rgba(var(--v-theme-primary), 0.02);
+}
+
+.session-card-new:hover {
+  background: rgba(var(--v-theme-primary), 0.05);
+  border-color: rgba(var(--v-theme-primary), 0.5);
 }
 </style>
