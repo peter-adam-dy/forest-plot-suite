@@ -45,97 +45,113 @@
       </v-card-title>
 
       <v-card-text>
-        <v-data-table
-          :headers="headers"
-          :items="localData"
-          :items-per-page="-1"
-          class="elevation-1"
-        >
-          <template v-slot:item.study="{ item }">
-            <v-text-field
-              v-model="item.study"
-              density="compact"
-              variant="outlined"
-              hide-details
-              @update:model-value="handleDataChange"
-            ></v-text-field>
-          </template>
-
-          <template v-slot:item.value="{ item }">
-            <v-text-field
-              v-model.number="item.value"
-              type="number"
-              step="0.01"
-              density="compact"
-              variant="outlined"
-              hide-details
-              @update:model-value="handleDataChange"
-            ></v-text-field>
-          </template>
-
-          <template v-slot:item.ci_lower="{ item }">
-            <v-text-field
-              v-model.number="item.ci_lower"
-              type="number"
-              step="0.01"
-              density="compact"
-              variant="outlined"
-              hide-details
-              @update:model-value="handleDataChange"
-            ></v-text-field>
-          </template>
-
-          <template v-slot:item.ci_upper="{ item }">
-            <v-text-field
-              v-model.number="item.ci_upper"
-              type="number"
-              step="0.01"
-              density="compact"
-              variant="outlined"
-              hide-details
-              @update:model-value="handleDataChange"
-            ></v-text-field>
-          </template>
-
-          <template v-slot:item.weight="{ item }">
-            <v-text-field
-              v-model.number="item.weight"
-              type="number"
-              step="0.01"
-              density="compact"
-              variant="outlined"
-              hide-details
-              placeholder="Optional"
-              @update:model-value="handleDataChange"
-            ></v-text-field>
-          </template>
-
-          <template v-slot:item.actions="{ index }">
-            <v-btn
-              icon
-              size="small"
-              variant="text"
-              color="error"
-              @click="deleteRow(index)"
+        <div class="data-table-wrapper elevation-1">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 50px;"></th>
+                <th style="min-width: 200px;">Study</th>
+                <th style="width: 120px;">Value</th>
+                <th style="width: 120px;">Lower CI</th>
+                <th style="width: 120px;">Upper CI</th>
+                <th style="width: 120px;">Weight</th>
+                <th style="width: 80px;">Actions</th>
+              </tr>
+            </thead>
+            <draggable
+              v-model="draggableData"
+              tag="tbody"
+              :item-key="(item, index) => index"
+              handle=".drag-handle"
+              @change="handleDragChange"
             >
-              <v-icon>mdi-delete</v-icon>
-            </v-btn>
-          </template>
+              <template #item="{ element, index }">
+                <tr>
+                  <td class="text-center">
+                    <v-icon class="drag-handle">mdi-drag-vertical</v-icon>
+                  </td>
+                  <td>
+                    <v-text-field
+                      v-model="element.study"
+                      density="compact"
+                      variant="outlined"
+                      hide-details
+                      @update:model-value="handleDataChange"
+                    ></v-text-field>
+                  </td>
+                  <td>
+                    <v-text-field
+                      v-model.number="element.value"
+                      type="number"
+                      step="0.01"
+                      density="compact"
+                      variant="outlined"
+                      hide-details
+                      @update:model-value="handleDataChange"
+                    ></v-text-field>
+                  </td>
+                  <td>
+                    <v-text-field
+                      v-model.number="element.ci_lower"
+                      type="number"
+                      step="0.01"
+                      density="compact"
+                      variant="outlined"
+                      hide-details
+                      @update:model-value="handleDataChange"
+                    ></v-text-field>
+                  </td>
+                  <td>
+                    <v-text-field
+                      v-model.number="element.ci_upper"
+                      type="number"
+                      step="0.01"
+                      density="compact"
+                      variant="outlined"
+                      hide-details
+                      @update:model-value="handleDataChange"
+                    ></v-text-field>
+                  </td>
+                  <td>
+                    <v-text-field
+                      v-model.number="element.weight"
+                      type="number"
+                      step="0.01"
+                      density="compact"
+                      variant="outlined"
+                      hide-details
+                      placeholder="Optional"
+                      @update:model-value="handleDataChange"
+                    ></v-text-field>
+                  </td>
+                  <td class="text-center">
+                    <v-btn
+                      icon
+                      size="small"
+                      variant="text"
+                      color="error"
+                      @click="deleteRow(index)"
+                    >
+                      <v-icon>mdi-delete</v-icon>
+                    </v-btn>
+                  </td>
+                </tr>
+              </template>
+            </draggable>
+          </table>
 
-          <template v-slot:bottom>
-            <div class="text-center pa-2">
-              <v-btn
-                color="primary"
-                variant="outlined"
-                size="small"
-                prepend-icon="mdi-plus"
-                @click="addRow"
-              >
-                Add Another Row
-              </v-btn>
-            </div>
-          </template>
-        </v-data-table>
+          <div class="text-center pa-2">
+            <v-btn
+              color="primary"
+              variant="outlined"
+              size="small"
+              prepend-icon="mdi-plus"
+              @click="addRow"
+            >
+              Add Another Row
+            </v-btn>
+          </div>
+        </div>
 
         <div v-if="validationErrors.length > 0" class="mt-4">
           <v-alert type="error" variant="tonal">
@@ -177,13 +193,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, toRaw } from 'vue'
 import { watchDebounced } from '@vueuse/core'
 import { useSessionStore } from '@/stores/session'
 import type { ForestPlotData } from '@/types'
 import { validateData } from '@/services/dataParser'
 import CSVImporter from './CSVImporter.vue'
 import ExcelImporter from './ExcelImporter.vue'
+import draggable from 'vuedraggable'
 
 const sessionStore = useSessionStore()
 
@@ -197,18 +214,18 @@ const snackbarColor = ref('success')
 const saveStatus = ref<'idle' | 'saving' | 'saved' | 'error'>('idle')
 const isInitialLoad = ref(true)
 
-const headers = [
-  { title: 'Study', key: 'study', sortable: true, width: '25%' },
-  { title: 'Value', key: 'value', sortable: true, width: '15%' },
-  { title: 'Lower CI', key: 'ci_lower', sortable: true, width: '15%' },
-  { title: 'Upper CI', key: 'ci_upper', sortable: true, width: '15%' },
-  { title: 'Weight', key: 'weight', sortable: true, width: '15%' },
-  { title: 'Actions', key: 'actions', sortable: false, width: '15%' },
-]
-
 const validationResult = computed(() => validateData(localData.value))
 const validationErrors = computed(() => validationResult.value.errors)
 const validationWarnings = computed(() => validationResult.value.warnings)
+
+// Computed property for draggable to strip reactive proxies
+const draggableData = computed({
+  get: () => localData.value,
+  set: (newValue) => {
+    // Strip reactive proxies from array and all nested objects
+    localData.value = toRaw(newValue).map(item => toRaw(item))
+  }
+})
 
 // Save status computed properties
 const saveStatusColor = computed(() => {
@@ -274,7 +291,8 @@ watchDebounced(
 
     try {
       saveStatus.value = 'saving'
-      await sessionStore.updateData(localData.value)
+      // Use toRaw to strip reactive proxies before saving to IndexedDB
+      await sessionStore.updateData(toRaw(localData.value))
       saveStatus.value = 'saved'
 
       // Clear "saved" status after 2 seconds
@@ -316,6 +334,11 @@ function deleteRow(index: number) {
 function handleDataChange() {
   // Trigger validation (auto-save will handle saving)
   validateData(localData.value)
+}
+
+function handleDragChange() {
+  // The computed setter already handles stripping reactive proxies
+  // This handler exists in case we need additional logic after drag
 }
 
 // Trigger file import by clicking hidden input
@@ -376,11 +399,56 @@ function showSnackbar(message: string, color: string = 'success') {
   width: 100%;
 }
 
-:deep(.v-data-table) {
+.data-table-wrapper {
+  background: white;
+  border-radius: 4px;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
   font-size: 0.875rem;
 }
 
-:deep(.v-data-table td) {
-  padding: 4px 8px !important;
+.data-table thead th {
+  background: rgb(var(--v-theme-surface));
+  font-weight: 600;
+  text-align: left;
+  padding: 12px 8px;
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  color: rgba(var(--v-theme-on-surface), 0.87);
+}
+
+.data-table tbody tr {
+  border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+.data-table tbody tr:hover {
+  background: rgba(var(--v-theme-on-surface), 0.04);
+}
+
+.data-table tbody td {
+  padding: 4px 8px;
+  vertical-align: middle;
+}
+
+.drag-handle {
+  cursor: grab;
+  color: rgba(var(--v-theme-on-surface), 0.54);
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+:deep(.sortable-ghost) {
+  opacity: 0.4;
+  background: rgba(var(--v-theme-primary), 0.1);
+}
+
+:deep(.sortable-drag) {
+  opacity: 0.9;
+  background: white;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 </style>
