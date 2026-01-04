@@ -71,15 +71,40 @@
                     <v-icon class="drag-handle">mdi-drag-vertical</v-icon>
                   </td>
                   <td>
-                    <v-textarea
-                      v-model="element.outcome"
-                      density="compact"
-                      variant="outlined"
-                      hide-details
-                      rows="1"
-                      auto-grow
-                      @update:model-value="handleDataChange"
-                    ></v-textarea>
+                    <div class="d-flex align-center gap-2">
+                      <v-textarea
+                        :ref="(el) => setTextareaRef(el, index)"
+                        v-model="element.outcome"
+                        density="compact"
+                        variant="outlined"
+                        hide-details
+                        rows="1"
+                        auto-grow
+                        @update:model-value="handleDataChange"
+                      ></v-textarea>
+                      <div class="d-flex flex-column">
+                        <v-btn
+                          icon
+                          size="x"
+                          variant="text"
+                          density="compact"
+                          @click="formatText(index, 'superscript')"
+                          title="Superscript"
+                        >
+                          <v-icon size="x">mdi-format-superscript</v-icon>
+                        </v-btn>
+                        <v-btn
+                          icon
+                          size="x"
+                          variant="text"
+                          density="compact"
+                          @click="formatText(index, 'subscript')"
+                          title="Subscript"
+                        >
+                          <v-icon size="x">mdi-format-subscript</v-icon>
+                        </v-btn>
+                      </div>
+                    </div>
                   </td>
                   <td>
                     <v-text-field
@@ -215,6 +240,9 @@ const snackbarMessage = ref('')
 const snackbarColor = ref('success')
 const saveStatus = ref<'idle' | 'saving' | 'saved' | 'error'>('idle')
 const isInitialLoad = ref(true)
+
+// Textarea refs for text formatting
+const textareaRefs = ref<Map<number, HTMLTextAreaElement>>(new Map())
 
 const validationResult = computed(() => validateData(localData.value))
 const validationErrors = computed(() => validationResult.value.errors)
@@ -393,6 +421,74 @@ function showSnackbar(message: string, color: string = 'success') {
   snackbarMessage.value = message
   snackbarColor.value = color
   snackbar.value = true
+}
+
+// Track textarea elements for text formatting
+function setTextareaRef(el: any, index: number) {
+  if (el && el.$el) {
+    // Vuetify v-textarea wraps the native textarea in $el
+    const textarea = el.$el.querySelector('textarea')
+    if (textarea) {
+      textareaRefs.value.set(index, textarea)
+    }
+  }
+}
+
+// Unicode character mappings for superscript and subscript
+const superscriptMap: Record<string, string> = {
+  '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹',
+  'a': 'ᵃ', 'b': 'ᵇ', 'c': 'ᶜ', 'd': 'ᵈ', 'e': 'ᵉ', 'f': 'ᶠ', 'g': 'ᵍ', 'h': 'ʰ', 'i': 'ⁱ', 'j': 'ʲ',
+  'k': 'ᵏ', 'l': 'ˡ', 'm': 'ᵐ', 'n': 'ⁿ', 'o': 'ᵒ', 'p': 'ᵖ', 'r': 'ʳ', 's': 'ˢ', 't': 'ᵗ', 'u': 'ᵘ',
+  'v': 'ᵛ', 'w': 'ʷ', 'x': 'ˣ', 'y': 'ʸ', 'z': 'ᶻ',
+  'A': 'ᴬ', 'B': 'ᴮ', 'D': 'ᴰ', 'E': 'ᴱ', 'G': 'ᴳ', 'H': 'ᴴ', 'I': 'ᴵ', 'J': 'ᴶ', 'K': 'ᴷ', 'L': 'ᴸ',
+  'M': 'ᴹ', 'N': 'ᴺ', 'O': 'ᴼ', 'P': 'ᴾ', 'R': 'ᴿ', 'T': 'ᵀ', 'U': 'ᵁ', 'V': 'ⱽ', 'W': 'ᵂ',
+  '+': '⁺', '-': '⁻', '=': '⁼', '(': '⁽', ')': '⁾'
+}
+
+const subscriptMap: Record<string, string> = {
+  '0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄', '5': '₅', '6': '₆', '7': '₇', '8': '₈', '9': '₉',
+  'a': 'ₐ', 'e': 'ₑ', 'h': 'ₕ', 'i': 'ᵢ', 'j': 'ⱼ', 'k': 'ₖ', 'l': 'ₗ', 'm': 'ₘ', 'n': 'ₙ', 'o': 'ₒ',
+  'p': 'ₚ', 'r': 'ᵣ', 's': 'ₛ', 't': 'ₜ', 'u': 'ᵤ', 'v': 'ᵥ', 'x': 'ₓ',
+  '+': '₊', '-': '₋', '=': '₌', '(': '₍', ')': '₎'
+}
+
+// Convert text to superscript or subscript
+function convertToFormat(text: string, formatType: 'superscript' | 'subscript'): string {
+  const map = formatType === 'superscript' ? superscriptMap : subscriptMap
+  return text.split('').map(char => map[char] || char).join('')
+}
+
+// Format selected text in the textarea
+function formatText(index: number, formatType: 'superscript' | 'subscript') {
+  const textarea = textareaRefs.value.get(index)
+  if (!textarea) return
+
+  const start = textarea.selectionStart
+  const end = textarea.selectionEnd
+
+  // If no text is selected, do nothing
+  if (start === end) {
+    showSnackbar('Please select text to format', 'warning')
+    return
+  }
+
+  const currentValue = localData.value[index]?.outcome || ''
+  const selectedText = currentValue.substring(start, end)
+  const formattedText = convertToFormat(selectedText, formatType)
+
+  // Replace selected text with formatted version
+  const newValue = currentValue.substring(0, start) + formattedText + currentValue.substring(end)
+  localData.value[index].outcome = newValue
+
+  // Restore cursor position after the formatted text
+  // Use nextTick to ensure the DOM is updated
+  setTimeout(() => {
+    const newCursorPos = start + formattedText.length
+    textarea.focus()
+    textarea.setSelectionRange(newCursorPos, newCursorPos)
+  }, 0)
+
+  handleDataChange()
 }
 </script>
 
