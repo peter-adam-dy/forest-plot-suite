@@ -29,9 +29,20 @@ function buildGgplot2DataFrame(data: ForestPlotData[]): string {
     const escaped = d.outcome.replace(/"/g, '\\"').replace(/\n/g, '\\n')
     return `"${escaped}"`
   }).join(', ')
-  const values = data.map(d => d.value).join(', ')
-  const ciLowers = data.map(d => d.ci_lower).join(', ')
-  const ciUppers = data.map(d => d.ci_upper).join(', ')
+
+  // Use NA for missing values (check for undefined, null, NaN, and empty string)
+  const toRValue = (val: any): string => {
+    // Check if value is missing, null, undefined, NaN, or empty string
+    if (val === undefined || val === null || val === '' || (typeof val === 'number' && isNaN(val))) {
+      return 'NA'
+    }
+    // Return as string to ensure consistent type
+    return String(val)
+  }
+
+  const values = data.map(d => toRValue(d.value)).join(', ')
+  const ciLowers = data.map(d => toRValue(d.ci_lower)).join(', ')
+  const ciUppers = data.map(d => toRValue(d.ci_upper)).join(', ')
 
   return `
 dat <- data.frame(
@@ -42,8 +53,11 @@ dat <- data.frame(
   stringsAsFactors = FALSE
 )
 
-# Reverse order for top-to-bottom display
+# Set outcome levels to preserve order (all outcomes, including those without data)
 dat$outcome <- factor(dat$outcome, levels = rev(dat$outcome))
+
+# Create subset for plotting (only rows with complete data)
+dat_plot <- dat[!is.na(dat$value) & !is.na(dat$ci_lower) & !is.na(dat$ci_upper), ]
 `
 }
 
@@ -57,13 +71,13 @@ function buildGgplot2PlotCode(data: ForestPlotData[], config: PlotConfig): strin
 
   const scaleCode = buildGgplot2Scale(data, config)
 
-  // Label code conditional on showValues
+  // Label code conditional on showValues (only for rows with data)
   const labelCode = config.showValues ? `
-  dat$label <- sprintf("%.2f\\n(%.2f–%.2f)", dat$value, dat$ci_lower, dat$ci_upper)
+  dat_plot$label <- sprintf("%.2f\\n(%.2f–%.2f)", dat_plot$value, dat_plot$ci_lower, dat_plot$ci_upper)
 ` : ''
 
   const labelGeom = config.showValues ? `
-  geom_text(aes(label = label), position = position_nudge(y = -0.12), vjust = 1, size = 3.3) +` : ''
+  geom_text(data = dat_plot, aes(label = label), position = position_nudge(y = -0.12), vjust = 1, size = 3.3) +` : ''
 
   // Increase bottom margin when showing values to prevent overlap
   const bottomMargin = config.showValues ? 35 : 20
@@ -86,10 +100,12 @@ function buildGgplot2PlotCode(data: ForestPlotData[], config: PlotConfig): strin
 
   return `
 ${labelCode}
+# Use dat for y-axis to show all outcomes, but dat_plot for geoms to only plot complete data
 p <- ggplot(dat, aes(x = value, y = outcome)) +
-  ${refLine}geom_point(size = ${config.pointSize}, color = "${pointColor}") +
-  geom_errorbar(aes(xmin = ci_lower, xmax = ci_upper), width = 0, linewidth = 0.7, color = "${pointColor}") +
+  ${refLine}geom_point(data = dat_plot, size = ${config.pointSize}, color = "${pointColor}") +
+  geom_errorbar(data = dat_plot, aes(xmin = ci_lower, xmax = ci_upper), width = 0, linewidth = 0.7, color = "${pointColor}") +
   ${scaleCode}
+  scale_y_discrete(drop = FALSE) +
   xlab("${xlab}") +
   ylab(NULL) +${labelGeom}
   coord_cartesian(clip = "off") +
@@ -113,13 +129,21 @@ function buildGgplot2Scale(data: ForestPlotData[], config: PlotConfig): string {
   if (config.xLimits !== 'auto') {
     limits = `c(${config.xLimits[0]}, ${config.xLimits[1]})`
   } else {
-    // Auto limits with padding (÷1.3, ×1.3)
-    const allValues = data.flatMap(d => [d.ci_lower, d.value, d.ci_upper])
-    const minVal = Math.min(...allValues)
-    const maxVal = Math.max(...allValues)
-    const xMin = minVal / 1.3
-    const xMax = maxVal * 1.3
-    limits = `c(${xMin.toFixed(4)}, ${xMax.toFixed(4)})`
+    // Auto limits with padding (÷1.3, ×1.3) - only use rows with complete data
+    const allValues = data
+      .filter(d => d.value !== undefined && d.ci_lower !== undefined && d.ci_upper !== undefined)
+      .flatMap(d => [d.ci_lower!, d.value!, d.ci_upper!])
+
+    if (allValues.length > 0) {
+      const minVal = Math.min(...allValues)
+      const maxVal = Math.max(...allValues)
+      const xMin = minVal / 1.3
+      const xMax = maxVal * 1.3
+      limits = `c(${xMin.toFixed(4)}, ${xMax.toFixed(4)})`
+    } else {
+      // If no data points, use default range
+      limits = 'c(0, 1)'
+    }
   }
 
   // Calculate breaks
@@ -196,17 +220,25 @@ export function validateData(data: ForestPlotData[]): { valid: boolean; errors: 
     if (!row.outcome || row.outcome.trim() === '') {
       errors.push(`Row ${idx + 1}: Outcome name is required`)
     }
-    if (isNaN(row.value)) {
+
+    // If any numeric value is provided, validate them
+    const hasValue = row.value !== undefined && row.value !== null
+    const hasLower = row.ci_lower !== undefined && row.ci_lower !== null
+    const hasUpper = row.ci_upper !== undefined && row.ci_upper !== null
+
+    if (hasValue && isNaN(row.value!)) {
       errors.push(`Row ${idx + 1}: Value must be a valid number`)
     }
-    if (isNaN(row.ci_lower)) {
+    if (hasLower && isNaN(row.ci_lower!)) {
       errors.push(`Row ${idx + 1}: Lower CI must be a valid number`)
     }
-    if (isNaN(row.ci_upper)) {
+    if (hasUpper && isNaN(row.ci_upper!)) {
       errors.push(`Row ${idx + 1}: Upper CI must be a valid number`)
     }
-    if (row.ci_lower >= row.ci_upper) {
-      errors.push(`Row ${idx + 1}: Lower CI must be less than Upper CI`)
+
+    // Only validate CI range if both are provided
+    if (hasLower && hasUpper && row.ci_lower! > row.ci_upper!) {
+      errors.push(`Row ${idx + 1}: Lower CI cannot be greater than Upper CI`)
     }
   })
 

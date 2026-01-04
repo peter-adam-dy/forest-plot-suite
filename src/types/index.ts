@@ -1,8 +1,8 @@
 export interface ForestPlotData {
   outcome: string
-  value: number
-  ci_lower: number
-  ci_upper: number
+  value?: number
+  ci_lower?: number
+  ci_upper?: number
   weight?: number
 }
 

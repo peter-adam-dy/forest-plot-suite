@@ -25,27 +25,28 @@ export function validateRow(row: any, index: number): ValidationResult {
     errors.push(`Row ${index + 1}: Outcome name is required`)
   }
 
-  if (row.value === undefined || row.value === null || row.value === '') {
-    errors.push(`Row ${index + 1}: Value is required`)
-  } else if (isNaN(Number(row.value))) {
+  // Value, CI fields are now optional - only validate if provided and not NaN
+  const hasValue = row.value !== undefined && row.value !== null && row.value !== '' && String(row.value).toLowerCase() !== 'nan'
+  const hasLower = row.ci_lower !== undefined && row.ci_lower !== null && row.ci_lower !== '' && String(row.ci_lower).toLowerCase() !== 'nan'
+  const hasUpper = row.ci_upper !== undefined && row.ci_upper !== null && row.ci_upper !== '' && String(row.ci_upper).toLowerCase() !== 'nan'
+
+  if (hasValue && isNaN(Number(row.value))) {
     errors.push(`Row ${index + 1}: Value must be a number`)
   }
 
-  if (row.ci_lower === undefined || row.ci_lower === null || row.ci_lower === '') {
-    errors.push(`Row ${index + 1}: Lower CI is required`)
-  } else if (isNaN(Number(row.ci_lower))) {
+  if (hasLower && isNaN(Number(row.ci_lower))) {
     errors.push(`Row ${index + 1}: Lower CI must be a number`)
   }
 
-  if (row.ci_upper === undefined || row.ci_upper === null || row.ci_upper === '') {
-    errors.push(`Row ${index + 1}: Upper CI is required`)
-  } else if (isNaN(Number(row.ci_upper))) {
+  if (hasUpper && isNaN(Number(row.ci_upper))) {
     errors.push(`Row ${index + 1}: Upper CI must be a number`)
   }
 
-  // Validate CI range
-  if (!isNaN(Number(row.ci_lower)) && !isNaN(Number(row.ci_upper))) {
-    if (Number(row.ci_lower) > Number(row.ci_upper)) {
+  // Validate CI range only if both are provided
+  if (hasLower && hasUpper) {
+    const lowerVal = Number(row.ci_lower)
+    const upperVal = Number(row.ci_upper)
+    if (!isNaN(lowerVal) && !isNaN(upperVal) && lowerVal > upperVal) {
       errors.push(`Row ${index + 1}: Lower CI cannot be greater than Upper CI`)
     }
   }
@@ -123,12 +124,21 @@ export function parseCSV(csvText: string): ParsedData {
       warnings.push(...validation.warnings)
 
       if (validation.isValid) {
+        // Helper function to convert value to number or undefined
+        const toNumberOrUndefined = (val: any): number | undefined => {
+          if (val === undefined || val === null || val === '' || String(val).toLowerCase() === 'nan') {
+            return undefined
+          }
+          const num = Number(val)
+          return isNaN(num) ? undefined : num
+        }
+
         data.push({
           outcome: String(row.outcome),
-          value: Number(row.value),
-          ci_lower: Number(row.ci_lower),
-          ci_upper: Number(row.ci_upper),
-          weight: row.weight ? Number(row.weight) : undefined,
+          value: toNumberOrUndefined(row.value),
+          ci_lower: toNumberOrUndefined(row.ci_lower),
+          ci_upper: toNumberOrUndefined(row.ci_upper),
+          weight: toNumberOrUndefined(row.weight),
         })
       }
     }
@@ -210,12 +220,21 @@ export function parseExcel(
       warnings.push(...validation.warnings)
 
       if (validation.isValid) {
+        // Helper function to convert value to number or undefined
+        const toNumberOrUndefined = (val: any): number | undefined => {
+          if (val === undefined || val === null || val === '' || String(val).toLowerCase() === 'nan') {
+            return undefined
+          }
+          const num = Number(val)
+          return isNaN(num) ? undefined : num
+        }
+
         data.push({
           outcome: String(row.outcome),
-          value: Number(row.value),
-          ci_lower: Number(row.ci_lower),
-          ci_upper: Number(row.ci_upper),
-          weight: row.weight !== undefined ? Number(row.weight) : undefined,
+          value: toNumberOrUndefined(row.value),
+          ci_lower: toNumberOrUndefined(row.ci_lower),
+          ci_upper: toNumberOrUndefined(row.ci_upper),
+          weight: toNumberOrUndefined(row.weight),
         })
       }
     }
