@@ -1,7 +1,7 @@
 import { openDB } from 'idb'
 import type { DBSchema, IDBPDatabase } from 'idb'
 import type { Session } from '@/types'
-import { toRaw } from 'vue'
+import { deepToRaw } from '@/utils/deepToRaw'
 
 const DB_NAME = 'forest-plot-app'
 const DB_VERSION = 1
@@ -51,8 +51,8 @@ export async function getSession(id: string): Promise<Session | undefined> {
 
 export async function saveSession(session: Session): Promise<void> {
   const db = await getDB()
-  // Use toRaw to remove Vue reactivity before saving to IndexedDB
-  await db.put(SESSIONS_STORE, toRaw(session))
+  // Use deepToRaw to recursively remove all Vue reactivity before saving to IndexedDB
+  await db.put(SESSIONS_STORE, deepToRaw(session))
 }
 
 export async function deleteSession(id: string): Promise<void> {
