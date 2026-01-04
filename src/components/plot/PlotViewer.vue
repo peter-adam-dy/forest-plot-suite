@@ -200,7 +200,15 @@ const dataStats = computed(() => {
     return { minEffect: 0, maxEffect: 0, meanEffect: 0, medianEffect: 0 }
   }
 
-  const effects = currentData.value.map(d => d.value)
+  // Filter out undefined values
+  const effects = currentData.value
+    .map(d => d.value)
+    .filter((v): v is number => v !== undefined && v !== null && !isNaN(v))
+
+  if (effects.length === 0) {
+    return { minEffect: 0, maxEffect: 0, meanEffect: 0, medianEffect: 0 }
+  }
+
   const sorted = [...effects].sort((a, b) => a - b)
 
   return {
