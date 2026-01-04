@@ -461,7 +461,9 @@ function convertToFormat(text: string, formatType: 'superscript' | 'subscript'):
 // Format selected text in the textarea
 function formatText(index: number, formatType: 'superscript' | 'subscript') {
   const textarea = textareaRefs.value.get(index)
-  if (!textarea) return
+  const row = localData.value[index]
+
+  if (!textarea || !row) return
 
   const start = textarea.selectionStart
   const end = textarea.selectionEnd
@@ -472,13 +474,13 @@ function formatText(index: number, formatType: 'superscript' | 'subscript') {
     return
   }
 
-  const currentValue = localData.value[index]?.outcome || ''
+  const currentValue = row.outcome || ''
   const selectedText = currentValue.substring(start, end)
   const formattedText = convertToFormat(selectedText, formatType)
 
   // Replace selected text with formatted version
   const newValue = currentValue.substring(0, start) + formattedText + currentValue.substring(end)
-  localData.value[index].outcome = newValue
+  row.outcome = newValue
 
   // Restore cursor position after the formatted text
   // Use nextTick to ensure the DOM is updated
