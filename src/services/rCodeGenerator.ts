@@ -24,7 +24,11 @@ ${plotCode}
 }
 
 function buildGgplot2DataFrame(data: ForestPlotData[]): string {
-  const outcomes = data.map(d => `"${d.outcome.replace(/"/g, '\\"')}"`).join(', ')
+  const outcomes = data.map(d => {
+    // Escape quotes and preserve newlines for multi-line labels
+    const escaped = d.outcome.replace(/"/g, '\\"').replace(/\n/g, '\\n')
+    return `"${escaped}"`
+  }).join(', ')
   const values = data.map(d => d.value).join(', ')
   const ciLowers = data.map(d => d.ci_lower).join(', ')
   const ciUppers = data.map(d => d.ci_upper).join(', ')

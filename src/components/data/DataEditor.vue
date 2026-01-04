@@ -71,13 +71,15 @@
                     <v-icon class="drag-handle">mdi-drag-vertical</v-icon>
                   </td>
                   <td>
-                    <v-text-field
+                    <v-textarea
                       v-model="element.outcome"
                       density="compact"
                       variant="outlined"
                       hide-details
+                      rows="1"
+                      auto-grow
                       @update:model-value="handleDataChange"
-                    ></v-text-field>
+                    ></v-textarea>
                   </td>
                   <td>
                     <v-text-field
